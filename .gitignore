@@ -1,0 +1,13 @@
+*.pyc
+.idea/
+.DS_Store
+.python-version
+upload/
+*.log
+node_modules/
+package-lock.json
+.vscode/
+venv/
+blog.db
+res/
+whoosh_index/
