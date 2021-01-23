@@ -96,7 +96,7 @@ def main(date, s_table):
                 (new_df["master"] > 7) &
                 (new_df["ogc"] < -2) &
                 (new_df["change"] < 5)
-                , columns].sort_values(by=['super'], ascending=True)
+                , columns].sort_values(by=['master'], ascending=True)
             if len(df_a) > 0:
                 last_df = df_a.head().round({'change': 2, 'ogc': 2}).to_string(header=None)
                 chat_id = "@hollystock"
