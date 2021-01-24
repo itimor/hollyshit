@@ -88,7 +88,7 @@ def main(date, s_table):
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
         df_a = pd.DataFrame()
         cur_t = '1600'
-        if dd.hour > 8 and dd.hour < 10:
+        if dd.hour == 9:
             cur_t = '0930'
             columns = ['code', 'name', 'super', 'return', 'now', 'change', 'ogc']
             df_a = new_df.loc[
@@ -100,7 +100,7 @@ def main(date, s_table):
                 chat_id = "@hollystock"
                 text = '%s 昨日涨幅>5今天低开前十\n' % date + last_df
                 send_tg(text, chat_id)
-        if dd.hour > 13 and dd.hour < 15:
+        if dd.hour == 14:
             cur_t = '1430'
             columns = ['code', 'name', 'super', 'return', 'now', 'change', 'ogc']
             df_a = new_df.loc[
