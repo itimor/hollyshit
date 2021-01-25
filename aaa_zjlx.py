@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # author: itimor
-# 东方财富资金流向，并根据策略筛选股票，并发送到tg频道
+# 东方财富资金流向
 
 from datetime import datetime, timedelta
 from fake_useragent import UserAgent

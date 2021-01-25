@@ -53,8 +53,6 @@ def get_stocks(codes):
                     'code': pre_code,
                     'open': d[1],
                     'now': d[3],
-                    'high': d[4],
-                    'low': d[5],
                     'change': (float(d[3]) - float(d[1])) / (float(d[1]) + 0.0001) * 100,
                     'ogc': (float(d[1]) - float(d[2])) / (float(d[2]) + 0.0001) * 100,
                 }
@@ -63,8 +61,6 @@ def get_stocks(codes):
                     'code': pre_code,
                     'open': d[2],
                     'now': d[2],
-                    'high': d[2],
-                    'low': d[2],
                     'change': 0.0,
                     'ogc': 0.0,
                 }
@@ -98,11 +94,32 @@ def main(date, s_table):
             if len(df_a) > 0:
                 last_df = df_a.head().round({'change': 2, 'ogc': 2}).to_string(header=None)
                 chat_id = "@hollystock"
+                text = '%s 早盘预计会涨\n' % date + last_df
+                send_tg(text, chat_id)
+        if dd.hour == 10:
+            cur_t = '1030'
+            columns = ['code', 'name', 'super', 'return', 'now', 'change', 'ogc']
+            df_a = new_df.loc[
+                (new_df["ogc"].abs() < 1) &
+                (new_df["ogc"] > -0.5) &
+                (new_df["ogc"] != 0) &
+                (new_df["master"] < 10) &
+                (new_df["master"] > 4) &
+                (new_df["super"] < 12) &
+                (new_df["super"] > 0) &
+                (new_df["mid"] < 0) &
+                (new_df["small"] < 0) &
+                (new_df["big"] < 0) &
+                (new_df["change"] < 5)
+                , columns].sort_values(by=['ogc'], ascending=True)
+            if len(df_a) > 0:
+                last_df = df_a.head().round({'change': 2, 'ogc': 2}).to_string(header=None)
+                chat_id = "@hollystock"
                 text = '%s 昨日涨幅>5今天低开前十\n' % date + last_df
                 send_tg(text, chat_id)
         if dd.hour == 14:
             cur_t = '1430'
-            columns = ['code', 'name', 'super', 'return', 'now', 'change', 'ogc']
+            columns = ['code', 'name', 'master', 'return', 'now', 'change', 'ogc']
             df_a = new_df.loc[
                 (new_df["master"] > 7) &
                 (new_df["ogc"] < -2) &
@@ -111,7 +128,7 @@ def main(date, s_table):
             if len(df_a) > 0:
                 last_df = df_a.head().round({'change': 2, 'ogc': 2}).to_string(header=None)
                 chat_id = "@hollystock"
-                text = '%s 明日可能会涨\n' % date + last_df
+                text = '%s 尾盘预计会涨\n' % date + last_df
                 send_tg(text, chat_id)
         if dd.hour > 15:
             cur_t = '1600'

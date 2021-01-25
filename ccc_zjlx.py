@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # author: itimor
-# 东方财富资金流向
+# 东方财富主力净流入排名
 
 from datetime import datetime, timedelta
 from fake_useragent import UserAgent
@@ -15,17 +15,19 @@ import os
 ua = UserAgent()
 headers = {'User-Agent': ua.random}
 
+
 def get_stocks():
     num = 1000
     timestamp = datetime.timestamp(dd)
     t1 = int(timestamp * 1000)
-    url = f'http://push2.eastmoney.com/api/qt/clist/get?cb=jQuery1123008677483930340002_1611572690331&fid=f184&po=1&pz={num}&pn=1&np=1&fltt=2&invt=2&ut=b2884a393a59ad64002292a3e90d46a5&fs=m%3A0%2Bt%3A6%2Bf%3A!2%2Cm%3A0%2Bt%3A13%2Bf%3A!2%2Cm%3A0%2Bt%3A80%2Bf%3A!2%2Cm%3A1%2Bt%3A2%2Bf%3A!2%2Cm%3A1%2Bt%3A23%2Bf%3A!2%2Cm%3A0%2Bt%3A7%2Bf%3A!2%2Cm%3A1%2Bt%3A3%2Bf%3A!2&fields=f12%2Cf14%2Cf2%2Cf3%2Cf62%2Cf184%2Cf66%2Cf69%2Cf72%2Cf75%2Cf78%2Cf81%2Cf84%2Cf87%2Cf204%2Cf205%2Cf124'
+    url = f'http://push2.eastmoney.com/api/qt/clist/get?cb=jQuery112309067513423792684_1611573719476&fid=f109&po=1&pz={num}&pn=1&np=1&fltt=2&invt=2&fields=f2%2Cf3%2Cf12%2Cf13%2Cf14%2Cf62%2Cf184%2Cf225%2Cf165%2Cf263%2Cf109%2Cf175%2Cf264%2Cf160%2Cf100%2Cf124%2Cf265&ut=b2884a393a59ad64002292a3e90d46a5&fs=m%3A0%2Bt%3A6%2Bf%3A!2%2Cm%3A0%2Bt%3A13%2Bf%3A!2%2Cm%3A0%2Bt%3A80%2Bf%3A!2%2Cm%3A1%2Bt%3A2%2Bf%3A!2%2Cm%3A1%2Bt%3A23%2Bf%3A!2'
     r = requests.get(url, headers=headers).text
     X = re.split('}}', r)[0]
     X = re.split('"diff":', X)[1]
     df_a = pd.read_json(X, orient='records')
-    df = df_a[['f12', 'f14', 'f2', 'f3', 'f184', 'f69', 'f75', 'f81', 'f87']]
-    df.columns = ['pre_code', 'name', 'close', 'return', 'master', 'super', 'big', 'mid', 'small']
+    df = df_a[['f12', 'f14', 'f2', 'f3', 'f184', 'f109', 'f165', 'f160', 'f175', 'f100']]
+    df.columns = ['pre_code', 'name', 'close', 'return_0', 'master_0', 'return_5', 'master_5', 'return_10', 'master_10',
+                  'plate']
     df['code'] = str(df['pre_code'])
     s_codes = []
     for i in df['pre_code']:
@@ -50,24 +52,17 @@ def get_stocks():
 
 def main():
     dfs = get_stocks()
-    columns = ['code', 'name', 'close', 'return', 'master', 'super', 'big', 'mid', 'small']
+    columns = ['code', 'name', 'close', 'return_0', 'master_0', 'return_5', 'master_5', 'return_10', 'master_10', 'plate']
     table = f'b_new'
     df = dfs.loc[
-        (dfs["close"] < 50) &
-        (dfs["return"] > 5), columns]
-    print(df[:5])
-    df.to_sql(table, con=engine, index=False, if_exists='replace')
-    table = f'c_new'
-    df = dfs.loc[
-        (dfs["close"] < 50) &
-        (dfs["return"] > 3) &
-        (dfs["return"] <= 5), columns]
+        (dfs["return_5"] > 5) &
+        (dfs["close"] < 50), columns]
     print(df[:5])
     df.to_sql(table, con=engine, index=False, if_exists='replace')
 
 
 if __name__ == '__main__':
-    db = 'bbb'
+    db = 'ccc'
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天
