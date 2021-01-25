@@ -71,14 +71,10 @@ def main(date, s_table):
     dfs = get_stocks(df['code'].to_list())
     if len(dfs) > 0:
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
-        cur_t = '1600'
         if dd.hour > 15:
-            cur_t = '1600'
-
-        d_table = f'{table_type}_new_{cur_t}'
-        df_a = new_df.sort_values(by=['ogc'], ascending=True)
-        df_a.to_sql(d_table, con=engine, index=False, if_exists='replace')
-        print(df_a.head())
+            df_a = new_df.sort_values(by=['ogc'], ascending=True)
+            df_a.to_sql(s_table, con=engine, index=False, if_exists='replace')
+            print(df_a.head())
 
 
 if __name__ == '__main__':
