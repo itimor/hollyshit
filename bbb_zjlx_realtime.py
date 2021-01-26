@@ -22,6 +22,7 @@ SELECT * from b_new where ogc <-2 and master > 10 and change < 6 ORDER by master
 # 今日早盘入  明日大涨 后天大大涨
 """
 SELECT * from b_new where ogc <0 and master < 20 and big > 0 and small < 0 and close < 10 ORDER by ogc;
+SELECT * from b_new_0930 where abs(ogc) <1 AND master < 10 AND master > 4 AND super < 12 AND super > 0 AND big < 0 AND small < 0 AND mid < 0 AND change < 5 ORDER by master;
 """
 
 
@@ -82,14 +83,65 @@ def main(date, s_table):
     dfs = get_stocks(df['code'].to_list())
     if len(dfs) > 0:
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
+        df_a = pd.DataFrame()
+        cur_t = '1600'
+        if dd.hour == 9:
+            cur_t = '0930'
+            columns = ['code', 'name', 'super', 'return', 'now', 'change', 'ogc']
+            df_a = new_df.loc[
+                #(new_df["ogc"] < -3) &
+                (new_df["change"] < 5)
+                , columns].sort_values(by=['ogc'], ascending=True)
+            if len(df_a) > 0:
+                last_df = df_a.head().round({'change': 2, 'ogc': 2}).to_string(header=None)
+                chat_id = "@hollystock"
+                text = '%s 早盘预计会涨\n' % date + last_df
+                send_tg(text, chat_id)
+        if dd.hour == 10:
+            cur_t = '1030'
+            columns = ['code', 'name', 'super', 'return', 'now', 'change', 'ogc']
+            df_a = new_df.loc[
+                (new_df["ogc"] < 1) &
+                (new_df["ogc"] > -0.5) &
+                (new_df["ogc"] != 0) &
+                (new_df["master"] < 10) &
+                (new_df["master"] > 4) &
+                (new_df["super"] < 12) &
+                (new_df["super"] > 0) &
+                (new_df["mid"] < 0) &
+                (new_df["small"] < 0) &
+                (new_df["big"] < 0) &
+                (new_df["change"] < 5)
+                , columns].sort_values(by=['ogc'], ascending=True)
+            if len(df_a) > 0:
+                last_df = df_a.head().round({'change': 2, 'ogc': 2}).to_string(header=None)
+                chat_id = "@hollystock"
+                text = '%s 昨日涨幅>5今天低开前十\n' % date + last_df
+                send_tg(text, chat_id)
+        if dd.hour == 14:
+            cur_t = '1430'
+            columns = ['code', 'name', 'master', 'return', 'now', 'change', 'ogc']
+            df_a = new_df.loc[
+                (new_df["master"] > 7) &
+                (new_df["ogc"] < -2) &
+                (new_df["change"] < 5)
+                , columns].sort_values(by=['master'], ascending=True)
+            if len(df_a) > 0:
+                last_df = df_a.head().round({'change': 2, 'ogc': 2}).to_string(header=None)
+                chat_id = "@hollystock"
+                text = '%s 尾盘预计会涨\n' % date + last_df
+                send_tg(text, chat_id)
         if dd.hour > 15:
-            df_a = new_df.sort_values(by=['ogc'], ascending=True)
-            df_a.to_sql(s_table, con=engine, index=False, if_exists='replace')
-            print(df_a.head())
+            cur_t = '1600'
+
+        d_table = f'{table_type}_new_{cur_t}'
+        df_a = new_df.sort_values(by=['ogc'], ascending=True)
+        df_a.to_sql(d_table, con=engine, index=False, if_exists='replace')
+        print(df_a.head())
 
 
 if __name__ == '__main__':
-    db = 'ddd'
+    db = 'bbb'
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天
@@ -106,6 +158,8 @@ if __name__ == '__main__':
         # last_d = "20210116"
         # 创建连接引擎
         engine = create_engine(f'sqlite:///{last_d}/{db}.db', echo=False, encoding='utf-8')
-        s_table = f'b_new'
-        main(last_d, s_table)
-
+        # table_type = 'b'
+        # table_type = 'c'
+        for table_type in ['b', 'c']:
+            s_table = f'{table_type}_new'
+            main(last_d, s_table)

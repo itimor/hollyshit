@@ -26,34 +26,45 @@ SELECT * from b_new where ogc <0 and master < 20 and big > 0 and small < 0 and c
 
 
 def get_stocks(codes):
-    dfs = []
+    limit = 18  # 要发
+    code_list = []
     for pre_code in codes:
-        print(pre_code)
         c = pre_code.split('.')
         code = f'{c[1].lower()}{c[0]}'
-        url = f'http://hq.sinajs.cn/list={code}'
+        code_list.append(code)
+    n = int(len(codes) / limit) + 1
+    m = 0
+    dfs = []
+    for i in range(n):
+        a = code_list[m:m + limit]
+        print(a)
+        m = (i + 1) * limit
+        url = f"http://hq.sinajs.cn/list={','.join(a)}"
         headers = {'User-Agent': ua.random}
         r = requests.get(url, headers=headers).text
-        X = re.split('";', r)[0]
-        X = re.split('="', X)[1]
-        d = X.split(',')
-        if d[-1] == '00':
-            d_data = {
-                'code': pre_code,
-                'open': d[1],
-                'now': d[3],
-                'change': (float(d[3]) - float(d[1])) / (float(d[1]) + 0.0001) * 100,
-                'ogc': (float(d[1]) - float(d[2])) / (float(d[2]) + 0.0001) * 100,
-            }
-        else:
-            d_data = {
-                'code': pre_code,
-                'open': d[2],
-                'now': d[2],
-                'change': 0.0,
-                'ogc': 0.0,
-            }
-        dfs.append(d_data)
+        X = re.split('";', r)
+        for x in X[:-1]:
+            y = re.split('="', x)
+            Y = re.split('hq_str_', y[0])[1]
+            pre_code = f'{Y[2:]}.{Y[:2].upper()}'
+            d = y[1].split(',')
+            if d[-1] == '00':
+                d_data = {
+                    'code': pre_code,
+                    'open': d[1],
+                    'now': d[3],
+                    'change': (float(d[3]) - float(d[1])) / (float(d[1]) + 0.0001) * 100,
+                    'ogc': (float(d[1]) - float(d[2])) / (float(d[2]) + 0.0001) * 100,
+                }
+            else:
+                d_data = {
+                    'code': pre_code,
+                    'open': d[2],
+                    'now': d[2],
+                    'change': 0.0,
+                    'ogc': 0.0,
+                }
+            dfs.append(d_data)
     dfs_json = json.dumps(dfs)
     df_a = pd.read_json(dfs_json, orient='records')
     return df_a
@@ -95,7 +106,6 @@ if __name__ == '__main__':
         # last_d = "20210116"
         # 创建连接引擎
         engine = create_engine(f'sqlite:///{last_d}/{db}.db', echo=False, encoding='utf-8')
-        table_type = 'b'
-        # table_type = 'c'
-        s_table = f'{table_type}_new'
+        s_table = f'b_new'
         main(last_d, s_table)
+

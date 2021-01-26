@@ -31,8 +31,8 @@ def get_stocks():
             s_dict[a[5]] = {
                 'pre_code': a[5],
                 'name': a[6],
-                'close': float(a[17]),
-                'return': float(a[18]),
+                'close': float(a[18]),
+                'return': float(a[17]),
                 'num': int(a[4]),
                 'sum': int(a[4]),
                 'start_day': a[7],
