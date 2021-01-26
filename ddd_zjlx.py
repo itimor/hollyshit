@@ -68,7 +68,7 @@ def get_stocks():
 def main():
     dfs = get_stocks()
     columns = ['code', 'name', 'close', 'return', 'num', 'sum', 'start_day', 'end_day']
-    table = f'zgdy'
+    table = f'jgdy'
     df = dfs.loc[
         (dfs["sum"] > 10) &
         (dfs["close"] < 50), columns]
