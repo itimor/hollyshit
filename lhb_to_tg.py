@@ -14,6 +14,7 @@ import math
 ua = UserAgent()
 headers = {'User-Agent': ua.random}
 
+
 def daterange(start, end, step=1, format="%Y-%m-%d"):
     strptime, strftime = datetime.strptime, datetime.strftime
     days = (strptime(end, format) - strptime(start, format)).days
@@ -24,19 +25,19 @@ def get_lhb_stocks(begin_date, end_date):
     timeline = daterange(begin_date, end_date)
     dfs = pd.DataFrame()
     for date_id in timeline:
-        URL_stocks_infos = r'http://data.eastmoney.com/DataCenter_V3/stock2016/TradeDetail/pagesize=200,page=1,sortRule=-1,sortType=,startDate=' + date_id + ',endDate=' + date_id + ',gpfw=0,js=var%20data_tab_1.html?rt=26442172'
-        r = requests.get(URL_stocks_infos).text
+        url = r'http://data.eastmoney.com/DataCenter_V3/stock2016/TradeDetail/pagesize=200,page=1,sortRule=-1,sortType=,startDate=' + date_id + ',endDate=' + date_id + ',gpfw=0,js=var%20data_tab_1.html?rt=26442172'
+        r = requests.get(url).text
         X = re.split(',"url"', r)[0]
         X = re.split('"data":', X)[1]
         df = pd.read_json(X, orient='records')
-        if (len(df) != 0):
+        if len(df) > 0:
             df2 = df[
                 ['Tdate', 'SCode', 'SName', 'ClosePrice', 'Chgradio', 'JmRate', 'Dchratio', 'Ltsz', 'JD']]
-            colunms_name = ['Code', 'Name', 'Close', 'Radio', 'Jm', 'Turn']
+            colunms = ['Code', 'Name', 'Close', 'Radio', 'Jm', 'Turn']
             df2 = df2.rename(
-                columns={'Tdate': 'Date', 'SCode': colunms_name[0], 'SName': colunms_name[1],
-                         'ClosePrice': colunms_name[2], 'Chgradio': colunms_name[3], 'JmRate': colunms_name[4],
-                         'Dchratio': colunms_name[5]})
+                columns={'Tdate': 'Date', 'SCode': colunms[0], 'SName': colunms[1],
+                         'ClosePrice': colunms[2], 'Chgradio': colunms[3], 'JmRate': colunms[4],
+                         'Dchratio': colunms[5]})
             df2['Wind_Code'] = str(df2['Code'])
             df2['Market'] = df2['Ltsz'].map(lambda x: x / 100000000)
             s_codes = []

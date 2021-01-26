@@ -68,7 +68,7 @@ def get_stocks():
 def main():
     dfs = get_stocks()
     columns = ['code', 'name', 'close', 'return', 'num', 'sum', 'start_day', 'end_day']
-    table = f'b_new'
+    table = f'zgdy'
     df = dfs.loc[
         (dfs["sum"] > 10) &
         (dfs["close"] < 50), columns]
@@ -77,7 +77,7 @@ def main():
 
 
 if __name__ == '__main__':
-    db = 'ddd'
+    db = 'bbb'
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天

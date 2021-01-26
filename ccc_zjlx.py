@@ -53,7 +53,7 @@ def get_stocks():
 def main():
     dfs = get_stocks()
     columns = ['code', 'name', 'close', 'return_0', 'master_0', 'return_5', 'master_5', 'return_10', 'master_10', 'plate']
-    table = f'b_new'
+    table = f'zljr'
     df = dfs.loc[
         (dfs["return_5"] > 5) &
         (dfs["close"] < 50), columns]
@@ -62,7 +62,7 @@ def main():
 
 
 if __name__ == '__main__':
-    db = 'ccc'
+    db = 'bbb'
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天

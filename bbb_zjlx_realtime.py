@@ -89,7 +89,7 @@ def main(date, s_table):
             cur_t = '0930'
             columns = ['code', 'name', 'super', 'return', 'now', 'change', 'ogc']
             df_a = new_df.loc[
-                # (new_df["ogc"] < -3) &
+                (new_df["ogc"] < -3) &
                 (new_df["change"] < 5)
                 , columns].sort_values(by=['ogc'], ascending=True)
             if len(df_a) > 0:
@@ -116,7 +116,7 @@ def main(date, s_table):
             if len(df_a) > 0:
                 last_df = df_a.head().round({'change': 2, 'ogc': 2}).to_string(header=None)
                 chat_id = "@hollystock"
-                text = '%s 昨日涨幅>5今天低开前十\n' % date + last_df
+                text = '%s 早盘预计会涨\n' % date + last_df
                 send_tg(text, chat_id)
         if dd.hour == 14:
             cur_t = '1430'
@@ -134,7 +134,7 @@ def main(date, s_table):
         if dd.hour > 15:
             cur_t = '1600'
 
-        d_table = f'{table_type}_new_{cur_t}'
+        d_table = f'zjlx_{cur_t}'
         df_a = new_df.sort_values(by=['ogc'], ascending=True)
         df_a.to_sql(d_table, con=engine, index=False, if_exists='replace')
         print(df_a.head())
@@ -158,5 +158,5 @@ if __name__ == '__main__':
         # last_d = "20210116"
         # 创建连接引擎
         engine = create_engine(f'sqlite:///{last_d}/{db}.db', echo=False, encoding='utf-8')
-        s_table = f'all_zjlx'
+        s_table = f'zjlx'
         main(last_d, s_table)

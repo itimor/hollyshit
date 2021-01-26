@@ -19,9 +19,9 @@ headers = {'User-Agent': ua.random}
 def get_stocks():
     timestamp = datetime.timestamp(dd)
     t1 = int(timestamp * 1000)
-    num = 1618
+    num = 518  # 我要发
     df_list = list()
-    for n in range(1, 4):
+    for n in range(1, 9):
         print(n)
         url = f'http://push2.eastmoney.com/api/qt/clist/get?cb=jQuery1123008677483930340002_1611572690331&fid=f184&po=1&pz={num}&pn={n}&np=1&fltt=2&invt=2&ut=b2884a393a59ad64002292a3e90d46a5&fs=m%3A0%2Bt%3A6%2Bf%3A!2%2Cm%3A0%2Bt%3A13%2Bf%3A!2%2Cm%3A0%2Bt%3A80%2Bf%3A!2%2Cm%3A1%2Bt%3A2%2Bf%3A!2%2Cm%3A1%2Bt%3A23%2Bf%3A!2%2Cm%3A0%2Bt%3A7%2Bf%3A!2%2Cm%3A1%2Bt%3A3%2Bf%3A!2&fields=f12%2Cf14%2Cf2%2Cf3%2Cf62%2Cf184%2Cf66%2Cf69%2Cf72%2Cf75%2Cf78%2Cf81%2Cf84%2Cf87%2Cf204%2Cf205%2Cf124'
         r = requests.get(url, headers=headers).text
@@ -59,7 +59,7 @@ def get_stocks():
 def main():
     dfs = get_stocks()
     columns = ['code', 'name', 'close', 'return', 'master', 'super', 'big', 'mid', 'small']
-    table = f'all_zjlx'
+    table = f'zjlx'
     df = dfs.loc[
         (dfs["close"] < 100), columns]
     print(df[:5])

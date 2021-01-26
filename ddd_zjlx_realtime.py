@@ -106,6 +106,6 @@ if __name__ == '__main__':
         # last_d = "20210116"
         # 创建连接引擎
         engine = create_engine(f'sqlite:///{last_d}/{db}.db', echo=False, encoding='utf-8')
-        s_table = f'b_new'
+        s_table = f'jgdy'
         main(last_d, s_table)
 
