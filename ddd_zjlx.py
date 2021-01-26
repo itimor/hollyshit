@@ -70,7 +70,7 @@ def main():
     columns = ['code', 'name', 'close', 'return', 'num', 'sum', 'start_day', 'end_day']
     table = f'b_new'
     df = dfs.loc[
-        (dfs["sum"] > 7) &
+        (dfs["sum"] > 10) &
         (dfs["close"] < 50), columns]
     print(df[:5])
     df.to_sql(table, con=engine, index=False, if_exists='replace')

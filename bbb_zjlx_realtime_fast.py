@@ -88,7 +88,7 @@ def main(date, s_table):
             cur_t = '0930'
             columns = ['code', 'name', 'super', 'return', 'now', 'change', 'ogc']
             df_a = new_df.loc[
-                (new_df["ogc"] < -3) &
+                #(new_df["ogc"] < -3) &
                 (new_df["change"] < 5)
                 , columns].sort_values(by=['ogc'], ascending=True)
             if len(df_a) > 0:
@@ -100,7 +100,7 @@ def main(date, s_table):
             cur_t = '1030'
             columns = ['code', 'name', 'super', 'return', 'now', 'change', 'ogc']
             df_a = new_df.loc[
-                (new_df["ogc"].abs() < 1) &
+                (new_df["ogc"] < 1) &
                 (new_df["ogc"] > -0.5) &
                 (new_df["ogc"] != 0) &
                 (new_df["master"] < 10) &
