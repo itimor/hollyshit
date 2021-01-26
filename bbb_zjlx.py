@@ -15,16 +15,22 @@ import os
 ua = UserAgent()
 headers = {'User-Agent': ua.random}
 
+
 def get_stocks():
-    num = 1000
     timestamp = datetime.timestamp(dd)
     t1 = int(timestamp * 1000)
-    url = f'http://push2.eastmoney.com/api/qt/clist/get?cb=jQuery1123008677483930340002_1611572690331&fid=f184&po=1&pz={num}&pn=1&np=1&fltt=2&invt=2&ut=b2884a393a59ad64002292a3e90d46a5&fs=m%3A0%2Bt%3A6%2Bf%3A!2%2Cm%3A0%2Bt%3A13%2Bf%3A!2%2Cm%3A0%2Bt%3A80%2Bf%3A!2%2Cm%3A1%2Bt%3A2%2Bf%3A!2%2Cm%3A1%2Bt%3A23%2Bf%3A!2%2Cm%3A0%2Bt%3A7%2Bf%3A!2%2Cm%3A1%2Bt%3A3%2Bf%3A!2&fields=f12%2Cf14%2Cf2%2Cf3%2Cf62%2Cf184%2Cf66%2Cf69%2Cf72%2Cf75%2Cf78%2Cf81%2Cf84%2Cf87%2Cf204%2Cf205%2Cf124'
-    r = requests.get(url, headers=headers).text
-    X = re.split('}}', r)[0]
-    X = re.split('"diff":', X)[1]
-    df_a = pd.read_json(X, orient='records')
-    df = df_a[['f12', 'f14', 'f2', 'f3', 'f184', 'f69', 'f75', 'f81', 'f87']]
+    num = 1618
+    df_list = list()
+    for n in range(1, 4):
+        print(n)
+        url = f'http://push2.eastmoney.com/api/qt/clist/get?cb=jQuery1123008677483930340002_1611572690331&fid=f184&po=1&pz={num}&pn={n}&np=1&fltt=2&invt=2&ut=b2884a393a59ad64002292a3e90d46a5&fs=m%3A0%2Bt%3A6%2Bf%3A!2%2Cm%3A0%2Bt%3A13%2Bf%3A!2%2Cm%3A0%2Bt%3A80%2Bf%3A!2%2Cm%3A1%2Bt%3A2%2Bf%3A!2%2Cm%3A1%2Bt%3A23%2Bf%3A!2%2Cm%3A0%2Bt%3A7%2Bf%3A!2%2Cm%3A1%2Bt%3A3%2Bf%3A!2&fields=f12%2Cf14%2Cf2%2Cf3%2Cf62%2Cf184%2Cf66%2Cf69%2Cf72%2Cf75%2Cf78%2Cf81%2Cf84%2Cf87%2Cf204%2Cf205%2Cf124'
+        r = requests.get(url, headers=headers).text
+        X = re.split('}}', r)[0]
+        X = re.split('"diff":', X)[1]
+        df_n = pd.read_json(X, orient='records')
+        df_list.append(df_n)
+    dfs = pd.concat(df_list)
+    df = dfs[['f12', 'f14', 'f2', 'f3', 'f184', 'f69', 'f75', 'f81', 'f87']]
     df.columns = ['pre_code', 'name', 'close', 'return', 'master', 'super', 'big', 'mid', 'small']
     df['code'] = str(df['pre_code'])
     s_codes = []
@@ -43,25 +49,19 @@ def get_stocks():
             s_codes.append(s)
     df['code'] = s_codes
     df.drop(['pre_code'], axis=1, inplace=True)
-    dfs = df[~ df['name'].str.contains('ST')]
-    last_dfs = dfs[~ dfs['code'].str.contains('^300|^688|^900')]
-    return last_dfs
+    df_st = df[~ df['name'].str.contains('ST')]
+    df_close_null = df_st.loc[df_st['close'] != '-']
+    last_df = df_close_null[~ df_close_null['code'].str.contains('^300|^688|^900')]
+    print(last_df)
+    return last_df
 
 
 def main():
     dfs = get_stocks()
     columns = ['code', 'name', 'close', 'return', 'master', 'super', 'big', 'mid', 'small']
-    table = f'b_new'
+    table = f'all_zjlx'
     df = dfs.loc[
-        (dfs["close"] < 50) &
-        (dfs["return"] > 5), columns]
-    print(df[:5])
-    df.to_sql(table, con=engine, index=False, if_exists='replace')
-    table = f'c_new'
-    df = dfs.loc[
-        (dfs["close"] < 50) &
-        (dfs["return"] > 3) &
-        (dfs["return"] <= 5), columns]
+        (dfs["close"] < 100), columns]
     print(df[:5])
     df.to_sql(table, con=engine, index=False, if_exists='replace')
 
