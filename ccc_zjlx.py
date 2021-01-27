@@ -55,7 +55,6 @@ def main():
     columns = ['code', 'name', 'close', 'return_0', 'master_0', 'return_5', 'master_5', 'return_10', 'master_10', 'plate']
     table = f'zljr'
     df = dfs.loc[
-        (dfs["return_5"] > 5) &
         (dfs["close"] < 50), columns]
     print(df[:5])
     df.to_sql(table, con=engine, index=False, if_exists='replace')
