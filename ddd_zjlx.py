@@ -28,16 +28,28 @@ def get_stocks():
     for s in s_data:
         a = s.split('|')
         if a[5] not in s_dict:
-            s_dict[a[5]] = {
-                'pre_code': a[5],
-                'name': a[6],
-                'close': float(a[18]),
-                'return': float(a[17]),
-                'num': int(a[4]),
-                'sum': int(a[4]),
-                'start_day': a[7],
-                'end_day': a[7],
-            }
+            try:
+                s_dict[a[5]] = {
+                    'pre_code': a[5],
+                    'name': a[6],
+                    'close': float(a[18]),
+                    'return': float(a[17]),
+                    'num': int(a[4]),
+                    'sum': int(a[4]),
+                    'start_day': a[7],
+                    'end_day': a[7],
+                }
+            except:
+                s_dict[a[5]] = {
+                    'pre_code': a[5],
+                    'name': a[6],
+                    'close': 0.0,
+                    'return': 0.0,
+                    'num': int(a[4]),
+                    'sum': int(a[4]),
+                    'start_day': a[7],
+                    'end_day': a[7],
+                }
         else:
             s_dict[a[5]]['sum'] += int(a[4])
             s_dict[a[5]]['start_day'] = a[7]

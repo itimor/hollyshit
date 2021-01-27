@@ -82,7 +82,7 @@ def main(date, s_table):
         new_df['change'] = (new_df['now'] - new_df['open']) / (new_df['open'] + 0.0001) * 100
         new_df['ogc'] = (new_df['open'] - new_df['close']) / (new_df['close'] + 0.0001) * 100
         df_a = pd.DataFrame()
-        cur_t = '1600'
+        cur_t = '0930'
         if dd.hour == 9:
             cur_t = '0930'
             columns = ['code', 'name', 'super', 'return', 'now', 'change', 'ogc']
