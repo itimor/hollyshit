@@ -54,16 +54,12 @@ def get_stocks(codes):
                     'code': pre_code,
                     'open': d[1],
                     'now': d[3],
-                    'change': (float(d[3]) - float(d[1])) / (float(d[1]) + 0.0001) * 100,
-                    'ogc': (float(d[1]) - float(d[2])) / (float(d[2]) + 0.0001) * 100,
                 }
             else:
                 d_data = {
                     'code': pre_code,
                     'open': d[2],
                     'now': d[2],
-                    'change': 0.0,
-                    'ogc': 0.0,
                 }
             dfs.append(d_data)
     dfs_json = json.dumps(dfs)
@@ -83,6 +79,8 @@ def main(date, s_table):
     dfs = get_stocks(df['code'].to_list())
     if len(dfs) > 0:
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
+        new_df['change'] = (new_df['now'] - new_df['open']) / (new_df['open'] + 0.0001) * 100
+        new_df['ogc'] = (new_df['open'] - new_df['close']) / (new_df['close'] + 0.0001) * 100
         df_a = pd.DataFrame()
         cur_t = '1600'
         if dd.hour == 9:
@@ -160,3 +158,4 @@ if __name__ == '__main__':
         engine = create_engine(f'sqlite:///{last_d}/{db}.db', echo=False, encoding='utf-8')
         s_table = f'zjlx'
         main(last_d, s_table)
+
