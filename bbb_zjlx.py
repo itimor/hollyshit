@@ -62,9 +62,16 @@ def main(date):
     table = f'zjlx'
     df = dfs.loc[
         (dfs["close"] < 100), columns]
-    df[['create_time']] = date
-    df['create_time'] = pd.to_datetime(df['create_time'], format=d_format)
-    last_df = df.set_index('create_time')
+    df['create_date'] = pd.to_datetime(cur_d, format=d_format)
+    df['create_date'] = df['create_date'].apply(lambda x: x.strftime(date_format))
+    df[['open']] = 0.0
+    t_list = ['0930', '1030', '1430', '1630']
+    for cur_t in t_list:
+        change = f'change_{cur_t}'
+        ogc = f'ogc_{cur_t}'
+        df[[change]] = 0.0
+        df[[ogc]] = 0.0
+    last_df = df.set_index('create_date')
     print(last_df[:5])
     last_df.to_sql(table, con=engine, index=True, if_exists='append')
 
@@ -73,6 +80,7 @@ if __name__ == '__main__':
     db = 'bbb'
     if not os.path.exists(db):
         os.makedirs(db)
+    date_format = '%Y-%m-%d'
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天
@@ -88,4 +96,3 @@ if __name__ == '__main__':
             # 创建连接引擎
             engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
             main(cur_d)
-

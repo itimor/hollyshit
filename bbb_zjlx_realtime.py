@@ -148,6 +148,7 @@ def get_stocks_by_126(codes):
             dfs.append(d_data)
     dfs_json = json.dumps(dfs)
     df_a = pd.read_json(dfs_json, orient='records')
+    print(df_a)
     return df_a
 
 
@@ -159,8 +160,12 @@ def send_tg(text, chat_id):
 
 
 def main(date, s_table):
-    df = pd.read_sql_query(f'select * from {s_table}', con=engine)
-    dfs = get_stocks_by_126(df['code'].to_list())
+    sql = f"select * from {s_table} where create_date = '{date}'"
+    df = pd.read_sql_query(sql, con=engine)
+    df.drop(['open'], axis=1, inplace=True)
+    if len(df) == 0:
+        return
+    dfs = get_stocks_by_qq(df['code'].to_list())
     if len(dfs) > 0:
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
         cur_t = '0930'
@@ -235,7 +240,7 @@ def main(date, s_table):
                 text = '%s 尾盘预计会涨\n' % date + last_df
                 send_tg(text, chat_id)
         if dd.hour > 15:
-            cur_t = '1600'
+            cur_t = '1630'
         change = f'change_{cur_t}'
         ogc = f'ogc_{cur_t}'
         try:
@@ -244,14 +249,12 @@ def main(date, s_table):
         except:
             new_df[change] = 0
             new_df[ogc] = 0
-        df_a = new_df.sort_values(by=[ogc], ascending=True).set_index('code')
+        df_a = new_df.sort_values(by=[ogc], ascending=True).set_index('create_date')
+        df_a.drop(['now'], axis=1, inplace=True)
         print(df_a.head())
         try:
             # delete those rows that we are going to "upsert"
-            tmp_table = 'zjlx_tmp'
-            x = df.set_index('code')
-            x.to_sql(tmp_table, engine, if_exists='replace', index=True)
-            engine.execute(f'delete from {s_table} where code in (select code from {tmp_table})')
+            engine.execute(f"delete from {s_table} where create_date = '{date}'")
             trans.commit()
 
             # insert changed rows
@@ -263,6 +266,7 @@ def main(date, s_table):
 
 if __name__ == '__main__':
     db = 'bbb'
+    date_format = '%Y-%m-%d'
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天
@@ -276,11 +280,11 @@ if __name__ == '__main__':
         df = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),
                                end_date=end_date.strftime(d_format), is_open='1')
         last_d = df.tail(1)['cal_date'].to_list()[0]
-        # last_d = "20210116"
+        cur_date = datetime.strptime(last_d, d_format)
+        last_date = cur_date.strftime(date_format)
         # 创建连接引擎
-        engine = create_engine(f'sqlite:///{last_d}/{db}.db', echo=False, encoding='utf-8')
+        engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
         conn = engine.connect()
         trans = conn.begin()
         s_table = f'zjlx'
-        main(last_d, s_table)
-
+        main(last_date, s_table)

@@ -26,6 +26,7 @@ def get_stocks():
     X = re.split('"diff":', X)[1]
     df_a = pd.read_json(X, orient='records')
     df = df_a[['f12', 'f14', 'f2', 'f3', 'f184', 'f109', 'f165', 'f160', 'f175', 'f100']]
+    print(df)
     df.columns = ['pre_code', 'name', 'close', 'return_0', 'master_0', 'return_5', 'master_5', 'return_10', 'master_10',
                   'plate']
     df['code'] = str(df['pre_code'])
@@ -73,9 +74,7 @@ if __name__ == '__main__':
         ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
         df = ts_data.trade_cal(exchange='', start_date=cur_d, end_date=cur_d, is_open='1')
         print(df)
-        if not os.path.exists(cur_d):
-            os.makedirs(cur_d)
         if len(df) > 0:
             # 创建连接引擎
-            engine = create_engine(f'sqlite:///{cur_d}/{db}.db', echo=False, encoding='utf-8')
+            engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
             main()
