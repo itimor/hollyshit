@@ -163,7 +163,6 @@ def main(date, s_table):
     dfs = get_stocks_by_126(df['code'].to_list())
     if len(dfs) > 0:
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
-        df_a = pd.DataFrame()
         cur_t = '0930'
         if dd.hour == 9:
             cur_t = '0930'
@@ -175,7 +174,7 @@ def main(date, s_table):
             except:
                 new_df[change] = 0
                 new_df[ogc] = 0
-            columns = ['code', 'name', 'super', 'return', change, ogc]
+            columns = ['code', 'name', 'master', 'return', change, ogc]
             df_a = new_df.loc[
                 (new_df[ogc] < -3) &
                 (new_df[change] < 5)
@@ -195,7 +194,7 @@ def main(date, s_table):
             except:
                 new_df[change] = 0
                 new_df[ogc] = 0
-            columns = ['code', 'name', 'super', 'return', change, ogc]
+            columns = ['code', 'name', 'master', 'return', change, ogc]
             df_a = new_df.loc[
                 (new_df[ogc] < 1) &
                 (new_df[ogc] > -0.5) &
@@ -224,7 +223,7 @@ def main(date, s_table):
             except:
                 new_df[change] = 0
                 new_df[ogc] = 0
-            columns = ['code', 'name', 'super', 'return', change, ogc]
+            columns = ['code', 'name', 'master', 'return', change, ogc]
             df_a = new_df.loc[
                 (new_df["master"] > 7) &
                 (new_df[ogc] < -2) &
@@ -245,14 +244,21 @@ def main(date, s_table):
         except:
             new_df[change] = 0
             new_df[ogc] = 0
-        df_a = new_df.sort_values(by=[ogc], ascending=True)
+        df_a = new_df.sort_values(by=[ogc], ascending=True).set_index('code')
         print(df_a.head())
-        df_a.to_sql(
-            name=s_table,
-            con=engine,
-            if_exists='append',
-            method='upsert_update'
-        )
+        try:
+            # delete those rows that we are going to "upsert"
+            tmp_table = 'zjlx_tmp'
+            x = df.set_index('code')
+            x.to_sql(tmp_table, engine, if_exists='replace', index=True)
+            engine.execute(f'delete from {s_table} where code in (select code from {tmp_table})')
+            trans.commit()
+
+            # insert changed rows
+            df_a.to_sql(s_table, engine, if_exists='append', index=True)
+        except:
+            trans.rollback()
+            raise
 
 
 if __name__ == '__main__':
@@ -273,7 +279,8 @@ if __name__ == '__main__':
         # last_d = "20210116"
         # 创建连接引擎
         engine = create_engine(f'sqlite:///{last_d}/{db}.db', echo=False, encoding='utf-8')
-        session = sessionmaker(engine)
+        conn = engine.connect()
+        trans = conn.begin()
         s_table = f'zjlx'
         main(last_d, s_table)
 
