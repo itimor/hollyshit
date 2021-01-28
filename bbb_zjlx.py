@@ -56,18 +56,23 @@ def get_stocks():
     return last_df
 
 
-def main():
+def main(date):
     dfs = get_stocks()
     columns = ['code', 'name', 'close', 'return', 'master', 'super', 'big', 'mid', 'small']
     table = f'zjlx'
     df = dfs.loc[
         (dfs["close"] < 100), columns]
-    print(df[:5])
-    df.to_sql(table, con=engine, index=False, if_exists='replace')
+    df[['create_time']] = date
+    df['create_time'] = pd.to_datetime(df['create_time'], format=d_format)
+    last_df = df.set_index('create_time')
+    print(last_df[:5])
+    last_df.to_sql(table, con=engine, index=True, if_exists='append')
 
 
 if __name__ == '__main__':
     db = 'bbb'
+    if not os.path.exists(db):
+        os.makedirs(db)
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天
@@ -79,9 +84,8 @@ if __name__ == '__main__':
         ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
         df = ts_data.trade_cal(exchange='', start_date=cur_d, end_date=cur_d, is_open='1')
         print(df)
-        if not os.path.exists(cur_d):
-            os.makedirs(cur_d)
         if len(df) > 0:
             # 创建连接引擎
-            engine = create_engine(f'sqlite:///{cur_d}/{db}.db', echo=False, encoding='utf-8')
-            main()
+            engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
+            main(cur_d)
+
