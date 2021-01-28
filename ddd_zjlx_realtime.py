@@ -26,47 +26,11 @@ SELECT * from b_new where ogc <0 and master < 20 and big > 0 and small < 0 and c
 
 
 def get_stocks(codes):
-    limit = 18  # 要发
-    code_list = []
-    for pre_code in codes:
-        c = pre_code.split('.')
-        code = f'{c[1].lower()}{c[0]}'
-        code_list.append(code)
-    n = int(len(codes) / limit) + 1
-    m = 0
-    dfs = []
-    for i in range(n):
-        a = code_list[m:m + limit]
-        print(a)
-        m = (i + 1) * limit
-        url = f"http://hq.sinajs.cn/list={','.join(a)}"
-        headers = {'User-Agent': ua.random}
-        r = requests.get(url, headers=headers).text
-        X = re.split('";', r)
-        for x in X[:-1]:
-            y = re.split('="', x)
-            Y = re.split('hq_str_', y[0])[1]
-            pre_code = f'{Y[2:]}.{Y[:2].upper()}'
-            d = y[1].split(',')
-            if d[-1] == '00':
-                d_data = {
-                    'code': pre_code,
-                    'open': d[1],
-                    'now': d[3],
-                    'change': (float(d[3]) - float(d[1])) / (float(d[1]) + 0.0001) * 100,
-                    'ogc': (float(d[1]) - float(d[2])) / (float(d[2]) + 0.0001) * 100,
-                }
-            else:
-                d_data = {
-                    'code': pre_code,
-                    'open': d[2],
-                    'now': d[2],
-                    'change': 0.0,
-                    'ogc': 0.0,
-                }
-            dfs.append(d_data)
-    dfs_json = json.dumps(dfs)
-    df_a = pd.read_json(dfs_json, orient='records')
+    code_list = ','.join(codes)
+    df = ts_data.daily(ts_code=code_list, start_date=start_date, end_date=end_date)
+    df_a = df.rename(
+        columns={'ts_code': 'code', 'close': close_x}
+    )
     return df_a
 
 
@@ -77,35 +41,52 @@ def send_tg(text, chat_id):
     bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
 
 
-def main(date, s_table):
-    df = pd.read_sql_query(f'select * from {s_table}', con=engine)
+def main(date, s_table, t):
+    sql = f"select * from {s_table} where create_date = '{date}'"
+    df = pd.read_sql_query(sql, con=engine)
     dfs = get_stocks(df['code'].to_list())
-    if len(dfs) > 0:
-        new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
-        if dd.hour > 15:
-            df_a = new_df.sort_values(by=['ogc'], ascending=True)
-            df_a.to_sql(s_table, con=engine, index=False, if_exists='replace')
-            print(df_a.head())
+
+    if len(dfs) == 0:
+        return
+    new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
+    new_df[return_x] = (new_df[close_x] - new_df['open']) / new_df['open'] * 100
+    df.drop([close_x], axis=1, inplace=True)
+    if dd.hour > 15:
+        df_a = new_df.sort_values(by=['ogc'], ascending=True)
+        print(df_a.head())
+        try:
+            # delete those rows that we are going to "upsert"
+            engine.execute(f"delete from {s_table} where create_date = '{date}'")
+            trans.commit()
+
+            # insert changed rows
+            df_a.to_sql(s_table, engine, if_exists='append', index=True)
+        except:
+            trans.rollback()
+            raise
 
 
 if __name__ == '__main__':
-    db = 'ddd'
+    db = 'bbb'
+    date_format = '%Y-%m-%d'
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天
     dd = datetime.now()
-    start_date = dd - timedelta(days=10)
-    end_date = dd - timedelta(days=1)
     cur_t = dd.strftime(t_format)
     if dd.hour > 8:
         # ts初始化
         ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
-        df = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),
-                               end_date=end_date.strftime(d_format), is_open='1')
-        last_d = df.tail(1)['cal_date'].to_list()[0]
-        # last_d = "20210116"
+        last_d = "2021-01-28"
+        t = '1'  # 1 3 5 10
+        close_x = f'close_{t}'
+        return_x = f'return_{t}'
+        dd = datetime.strptime(last_d, d_format)
+        start_date = dd + timedelta(days=t)
+        end_date = dd + timedelta(days=t)
         # 创建连接引擎
-        engine = create_engine(f'sqlite:///{last_d}/{db}.db', echo=False, encoding='utf-8')
+        engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
+        conn = engine.connect()
+        trans = conn.begin()
         s_table = f'jgdy'
         main(last_d, s_table)
-

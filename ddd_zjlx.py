@@ -10,8 +10,6 @@ import numpy as np
 import tushare as ts
 import re
 import requests
-import os
-import json
 
 ua = UserAgent()
 headers = {'User-Agent': ua.random}
@@ -36,8 +34,8 @@ def get_stocks():
                     'return': float(a[17]),
                     'num': int(a[4]),
                     'sum': int(a[4]),
-                    'start_day': a[7],
-                    'end_day': a[7],
+                    'start_date': a[7],
+                    'create_date': a[7],
                 }
             except:
                 s_dict[a[5]] = {
@@ -47,12 +45,12 @@ def get_stocks():
                     'return': 0.0,
                     'num': int(a[4]),
                     'sum': int(a[4]),
-                    'start_day': a[7],
-                    'end_day': a[7],
+                    'start_date': a[7],
+                    'create_date': a[7],
                 }
         else:
             s_dict[a[5]]['sum'] += int(a[4])
-            s_dict[a[5]]['start_day'] = a[7]
+            s_dict[a[5]]['start_date'] = a[7]
 
     df = pd.DataFrame(s_dict.values())
     df['code'] = str(df['pre_code'])
@@ -79,29 +77,35 @@ def get_stocks():
 
 def main():
     dfs = get_stocks()
-    columns = ['code', 'name', 'close', 'return', 'num', 'sum', 'start_day', 'end_day']
+    if len(dfs) == 0:
+        return
+    columns = ['code', 'name', 'close', 'return', 'num', 'sum', 'start_day', 'create_date']
     table = f'jgdy'
     df = dfs.loc[
-        (dfs["sum"] > 10) &
+        (dfs["create_date"] == cur_date) &
         (dfs["close"] < 50), columns]
-    print(df[:5])
-    df.to_sql(table, con=engine, index=False, if_exists='replace')
+    df['create_date'] = pd.to_datetime(df['create_date'], format=date_format)
+    df['create_date'] = df['create_date'].apply(lambda x: x.strftime(date_format))
+    t_list = ['1', '3', '5', '10']
+    for cur_t in t_list:
+        return_x = f'return_{cur_t}'
+        df[[return_x]] = 0.0
+    last_df = df.set_index('create_date')
+    print(last_df[:5])
+    last_df.to_sql(table, con=engine, index=True, if_exists='append')
 
 
 if __name__ == '__main__':
     db = 'bbb'
+    date_format = '%Y-%m-%d'
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天
     dd = datetime.now()
+    cur_date = dd.strftime(date_format)
     cur_d = dd.strftime(d_format)
     cur_t = dd.strftime(t_format)
     if dd.hour > 15:
-        # ts初始化
-        ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
-        df = ts_data.trade_cal(exchange='', start_date=cur_d, end_date=cur_d, is_open='1')
-        print(df)
-        if len(df) > 0:
-            # 创建连接引擎
-            engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
-            main()
+        # 创建连接引擎
+        engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
+        main()

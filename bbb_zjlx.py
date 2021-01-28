@@ -56,13 +56,13 @@ def get_stocks():
     return last_df
 
 
-def main(date):
+def main():
     dfs = get_stocks()
     columns = ['code', 'name', 'close', 'return', 'master', 'super', 'big', 'mid', 'small']
     table = f'zjlx'
     df = dfs.loc[
         (dfs["close"] < 100), columns]
-    df['create_date'] = pd.to_datetime(cur_d, format=d_format)
+    df['create_date'] = pd.to_datetime(cur_date, format=date_format)
     df['create_date'] = df['create_date'].apply(lambda x: x.strftime(date_format))
     df[['open']] = 0.0
     t_list = ['0930', '1030', '1430', '1630']
@@ -85,6 +85,7 @@ if __name__ == '__main__':
     t_format = '%H%M'
     # 获得当天
     dd = datetime.now()
+    cur_date = dd.strftime(date_format)
     cur_d = dd.strftime(d_format)
     cur_t = dd.strftime(t_format)
     if dd.hour > 15:
@@ -95,4 +96,4 @@ if __name__ == '__main__':
         if len(df) > 0:
             # 创建连接引擎
             engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
-            main(cur_d)
+            main()

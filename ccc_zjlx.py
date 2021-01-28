@@ -10,7 +10,6 @@ import numpy as np
 import tushare as ts
 import re
 import requests
-import os
 
 ua = UserAgent()
 headers = {'User-Agent': ua.random}
@@ -57,16 +56,21 @@ def main():
     table = f'zljr'
     df = dfs.loc[
         (dfs["close"] < 50), columns]
-    print(df[:5])
-    df.to_sql(table, con=engine, index=False, if_exists='replace')
+    df['create_date'] = pd.to_datetime(cur_date, format=date_format)
+    df['create_date'] = df['create_date'].apply(lambda x: x.strftime(date_format))
+    last_df = df.set_index('create_date')
+    print(last_df[:5])
+    last_df.to_sql(table, con=engine, index=True, if_exists='append')
 
 
 if __name__ == '__main__':
     db = 'bbb'
+    date_format = '%Y-%m-%d'
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天
     dd = datetime.now()
+    cur_date = dd.strftime(date_format)
     cur_d = dd.strftime(d_format)
     cur_t = dd.strftime(t_format)
     if dd.hour > 15:
