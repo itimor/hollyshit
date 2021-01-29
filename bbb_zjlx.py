@@ -66,9 +66,14 @@ def main():
     df['create_date'] = df['create_date'].apply(lambda x: x.strftime(date_format))
     df[['open']] = 0.0
     df[['ogc']] = 0.0
-    t_list = ['0930', '1030', '1430', '1630']
+    t_list_am = [datetime.strftime(x, t_format) for x in
+                 pd.date_range(f'{cur_date} 09:30', f'{cur_date} 11:30', freq='30min')]
+    t_list_pm = [datetime.strftime(x, t_format) for x in
+                 pd.date_range(f'{cur_date} 13:30', f'{cur_date} 14:40', freq='30min')]
+    t_list = t_list_am + t_list_pm
+    t_list.append('1630')
     for cur_t in t_list:
-        change = f'change_{cur_t}'
+        change = f'c_{cur_t}'
         df[[change]] = 0.0
     last_df = df.set_index('create_date')
     print(last_df[:5])

@@ -160,7 +160,7 @@ def send_tg(text, chat_id):
     bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
 
 
-def main(date, s_table):
+def main(date, s_table, cur_t):
     sql = f"select * from {s_table} where create_date = '{date}'"
     df = pd.read_sql_query(sql, con=engine)
     df.drop(['open', 'ogc'], axis=1, inplace=True)
@@ -169,10 +169,8 @@ def main(date, s_table):
     dfs = get_stocks_by_126(df['code'].to_list())
     if len(dfs) > 0:
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
-        cur_t = '0930'
-        if dd.hour == 9:
-            cur_t = '0930'
-            change = f'change_{cur_t}'
+        change = f'c_{cur_t}'
+        if cur_t == '0930':
             try:
                 new_df[change] = (new_df['now'] - new_df['open']) / new_df['open'] * 100
             except:
@@ -188,36 +186,7 @@ def main(date, s_table):
                 chat_id = "@hollystock"
                 text = '%s 早盘预计会涨\n' % date + last_df
                 send_tg(text, chat_id)
-        if dd.hour == 10:
-            cur_t = '1030'
-            change = f'change_{cur_t}'
-            try:
-                new_df[change] = (new_df['now'] - new_df['open']) / new_df['open'] * 100
-            except:
-                new_df[change] = 0
-            new_df['ogc'] = (new_df['open'] - new_df['close']) / new_df['close'] * 100
-            columns = ['code', 'name', 'master', 'open', 'ogc', change]
-            df_a = new_df.loc[
-                (new_df['ogc'] < 1) &
-                (new_df['ogc'] > -0.5) &
-                (new_df['ogc'] != 0) &
-                (new_df["master"] < 10) &
-                (new_df["master"] > 4) &
-                (new_df["super"] < 12) &
-                (new_df["super"] > 0) &
-                (new_df["mid"] < 0) &
-                (new_df["small"] < 0) &
-                (new_df["big"] < 0) &
-                (new_df[change] < 5)
-                , columns].sort_values(by=['ogc'], ascending=True)
-            if len(df_a) > 0:
-                last_df = df_a.head().round({change: 2, 'ogc': 2}).to_string(header=None)
-                chat_id = "@hollystock"
-                text = '%s 早盘预计会涨\n' % date + last_df
-                send_tg(text, chat_id)
-        if dd.hour == 14:
-            cur_t = '1430'
-            change = f'change_{cur_t}'
+        if cur_t == '1430':
             try:
                 new_df[change] = (new_df['now'] - new_df['open']) / new_df['open'] * 100
             except:
@@ -234,9 +203,6 @@ def main(date, s_table):
                 chat_id = "@hollystock"
                 text = '%s 尾盘预计会涨\n' % date + last_df
                 send_tg(text, chat_id)
-        if dd.hour > 15:
-            cur_t = '1630'
-        change = f'change_{cur_t}'
         try:
             new_df[change] = (new_df['now'] - new_df['open']) / new_df['open'] * 100
         except:
@@ -280,4 +246,13 @@ if __name__ == '__main__':
         conn = engine.connect()
         trans = conn.begin()
         s_table = f'zjlx'
-        main(last_date, s_table)
+        t_list_am = [datetime.strftime(x, t_format) for x in
+                     pd.date_range(f'{cur_date} 09:30', f'{cur_date} 11:30', freq='30min')]
+        t_list_pm = [datetime.strftime(x, t_format) for x in
+                     pd.date_range(f'{cur_date} 13:30', f'{cur_date} 14:40', freq='30min')]
+        t_list = t_list_am + t_list_pm
+        if dd.hour > 15:
+            cur_t = '1630'
+            t_list.append('1630')
+        if cur_t in t_list:
+            main(last_date, s_table, cur_t)
