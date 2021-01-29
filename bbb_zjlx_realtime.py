@@ -250,7 +250,7 @@ def main(date, s_table):
         except:
             new_df[change] = 0
             new_df[ogc] = 0
-        df_a = new_df.sort_values(by=[ogc], ascending=True).set_index('create_date')
+        df_a = new_df.sort_values(by=[ogc], ascending=True).set_index('create_date').round({change: 2, ogc: 2})
         df_a.drop(['now'], axis=1, inplace=True)
         print(df_a.head())
         try:
