@@ -65,12 +65,11 @@ def main():
     df['create_date'] = pd.to_datetime(cur_date, format=date_format)
     df['create_date'] = df['create_date'].apply(lambda x: x.strftime(date_format))
     df[['open']] = 0.0
+    df[['ogc']] = 0.0
     t_list = ['0930', '1030', '1430', '1630']
     for cur_t in t_list:
         change = f'change_{cur_t}'
-        ogc = f'ogc_{cur_t}'
         df[[change]] = 0.0
-        df[[ogc]] = 0.0
     last_df = df.set_index('create_date')
     print(last_df[:5])
     last_df.to_sql(table, con=engine, index=True, if_exists='append')

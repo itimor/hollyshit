@@ -16,16 +16,20 @@ headers = {'User-Agent': ua.random}
 
 
 def get_stocks():
-    num = 1000
     timestamp = datetime.timestamp(dd)
     t1 = int(timestamp * 1000)
-    url = f'http://push2.eastmoney.com/api/qt/clist/get?cb=jQuery112309067513423792684_1611573719476&fid=f109&po=1&pz={num}&pn=1&np=1&fltt=2&invt=2&fields=f2%2Cf3%2Cf12%2Cf13%2Cf14%2Cf62%2Cf184%2Cf225%2Cf165%2Cf263%2Cf109%2Cf175%2Cf264%2Cf160%2Cf100%2Cf124%2Cf265&ut=b2884a393a59ad64002292a3e90d46a5&fs=m%3A0%2Bt%3A6%2Bf%3A!2%2Cm%3A0%2Bt%3A13%2Bf%3A!2%2Cm%3A0%2Bt%3A80%2Bf%3A!2%2Cm%3A1%2Bt%3A2%2Bf%3A!2%2Cm%3A1%2Bt%3A23%2Bf%3A!2'
-    r = requests.get(url, headers=headers).text
-    X = re.split('}}', r)[0]
-    X = re.split('"diff":', X)[1]
-    df_a = pd.read_json(X, orient='records')
-    df = df_a[['f12', 'f14', 'f2', 'f3', 'f184', 'f109', 'f165', 'f160', 'f175', 'f100']]
-    print(df)
+    num = 168  # 一路发
+    df_list = list()
+    for n in range(1, 9):
+        print(n)
+        url = f'http://push2.eastmoney.com/api/qt/clist/get?cb=jQuery1123040245955284777524_1611921167985&fid=f184&po=1&pz={num}&pn={n}&np=1&fltt=2&invt=2&fields=f2%2Cf3%2Cf12%2Cf13%2Cf14%2Cf62%2Cf184%2Cf225%2Cf165%2Cf263%2Cf109%2Cf175%2Cf264%2Cf160%2Cf100%2Cf124%2Cf265&ut=b2884a393a59ad64002292a3e90d46a5&fs=m%3A0%2Bt%3A6%2Bf%3A!2%2Cm%3A0%2Bt%3A13%2Bf%3A!2%2Cm%3A0%2Bt%3A80%2Bf%3A!2%2Cm%3A1%2Bt%3A2%2Bf%3A!2%2Cm%3A1%2Bt%3A23%2Bf%3A!2%2Cm%3A0%2Bt%3A7%2Bf%3A!2%2Cm%3A1%2Bt%3A3%2Bf%3A!2'
+        r = requests.get(url, headers=headers).text
+        X = re.split('}}', r)[0]
+        X = re.split('"diff":', X)[1]
+        df_n = pd.read_json(X, orient='records')
+        df_list.append(df_n)
+    dfs = pd.concat(df_list)
+    df = dfs[['f12', 'f14', 'f2', 'f3', 'f184', 'f109', 'f165', 'f160', 'f175', 'f100']]
     df.columns = ['pre_code', 'name', 'close', 'return_0', 'master_0', 'return_5', 'master_5', 'return_10', 'master_10',
                   'plate']
     df['code'] = str(df['pre_code'])

@@ -79,7 +79,7 @@ def main():
     dfs = get_stocks()
     if len(dfs) == 0:
         return
-    columns = ['code', 'name', 'close', 'return', 'num', 'sum', 'start_day', 'create_date']
+    columns = ['code', 'name', 'close', 'return', 'num', 'sum', 'start_date', 'create_date']
     table = f'jgdy'
     df = dfs.loc[
         (dfs["create_date"] == cur_date) &
