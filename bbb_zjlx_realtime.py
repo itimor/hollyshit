@@ -69,6 +69,7 @@ def get_stocks_by_sina(codes):
 
 # 获取实时行情-腾讯接口
 def get_stocks_by_qq(codes):
+    return
     limit = 18  # 要发
     code_list = []
     for pre_code in codes:
@@ -165,7 +166,7 @@ def main(date, s_table):
     df.drop(['open'], axis=1, inplace=True)
     if len(df) == 0:
         return
-    dfs = get_stocks_by_qq(df['code'].to_list())
+    dfs = get_stocks_by_126(df['code'].to_list())
     if len(dfs) > 0:
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
         cur_t = '0930'
@@ -179,7 +180,7 @@ def main(date, s_table):
             except:
                 new_df[change] = 0
                 new_df[ogc] = 0
-            columns = ['code', 'name', 'master', 'return', change, ogc]
+            columns = ['code', 'name', 'master', 'open', change, ogc]
             df_a = new_df.loc[
                 (new_df[ogc] < -3) &
                 (new_df[change] < 5)
@@ -199,7 +200,7 @@ def main(date, s_table):
             except:
                 new_df[change] = 0
                 new_df[ogc] = 0
-            columns = ['code', 'name', 'master', 'return', change, ogc]
+            columns = ['code', 'name', 'master', 'open', change, ogc]
             df_a = new_df.loc[
                 (new_df[ogc] < 1) &
                 (new_df[ogc] > -0.5) &
@@ -228,7 +229,7 @@ def main(date, s_table):
             except:
                 new_df[change] = 0
                 new_df[ogc] = 0
-            columns = ['code', 'name', 'master', 'return', change, ogc]
+            columns = ['code', 'name', 'master', 'open', change, ogc]
             df_a = new_df.loc[
                 (new_df["master"] > 7) &
                 (new_df[ogc] < -2) &
