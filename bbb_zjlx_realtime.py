@@ -189,7 +189,11 @@ def main(date, s_table, cur_t):
         try:
             engine.execute(f"delete from {s_table} where create_date = '{date}'")
             trans.commit()
+<<<<<<< HEAD
             df_a.to_sql(s_table, engine, if_exists='append', index=True)
+=======
+            df_a.to_sql(s_table, engine, if_exists='append', index=False)
+>>>>>>> b5035d10e7bd4c4ac899e606ab0ac870516df8e7
         except:
             trans.rollback()
             raise
@@ -239,6 +243,8 @@ if __name__ == '__main__':
         if dd.hour > 15:
             cur_t = '1630'
             t_list.append('1630')
+        if dd.hour > 9:
+            cur_t = '0930'
         if cur_t in t_list:
             main(last_date, s_table, cur_t)
 
