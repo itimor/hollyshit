@@ -94,8 +94,7 @@ def get_stocks_by_qq(codes):
             d = y[1].split('~')
             d_data = {
                 'code': pre_code,
-                'now': d[3],
-                'open': float(d[3]) - float(d[4]),
+                'now': d[3]
             }
             dfs.append(d_data)
     dfs_json = json.dumps(dfs)
@@ -120,36 +119,36 @@ def get_stocks_by_126(codes):
     dfs = []
     for i in range(n):
         a = code_list[m:m + limit]
-        m = (i + 1) * limit
-        url = f"http://api.money.126.net/data/feed/{','.join(a)}"
-        headers = {'User-Agent': ua.random}
-        r = requests.get(url, headers=headers).text
-        X = re.split('[)];', r)
-        X = re.split('_ntes_quote_callback[(]', X[0])
-        b = json.loads(X[1])
-        for d in b.values():
-            Y = d['code']
-            if Y[:1] == 0:
-                pre = 'SH'
-            else:
-                pre = 'SZ'
-            pre_code = f'{Y[1:]}.{pre}'
-            if d['status'] == 0:
-                d_data = {
-                    'code': pre_code,
-                    'open': d['open'],
-                    'now': d['price'],
-                }
-            else:
-                d_data = {
-                    'code': pre_code,
-                    'open': d['yestclose'],
-                    'now': d['yestclose'],
-                }
-            dfs.append(d_data)
+        if len(a) > 0:
+            m = (i + 1) * limit
+            url = f"http://api.money.126.net/data/feed/{','.join(a)}"
+            headers = {'User-Agent': ua.random}
+            r = requests.get(url, headers=headers).text
+            X = re.split('[)];', r)
+            X = re.split('_ntes_quote_callback[(]', X[0])
+            b = json.loads(X[1])
+            for d in b.values():
+                Y = d['code']
+                if Y[:1] == 0:
+                    pre = 'SH'
+                else:
+                    pre = 'SZ'
+                pre_code = f'{Y[1:]}.{pre}'
+                if d['status'] == 0:
+                    d_data = {
+                        'code': pre_code,
+                        'open': d['open'],
+                        'now': d['price'],
+                    }
+                else:
+                    d_data = {
+                        'code': pre_code,
+                        'open': d['yestclose'],
+                        'now': d['yestclose'],
+                    }
+                dfs.append(d_data)
     dfs_json = json.dumps(dfs)
     df_a = pd.read_json(dfs_json, orient='records')
-    print(df_a)
     return df_a
 
 
@@ -163,46 +162,20 @@ def send_tg(text, chat_id):
 def main(date, s_table, cur_t):
     sql = f"select * from {s_table} where create_date = '{date}'"
     df = pd.read_sql_query(sql, con=engine)
-    df.drop(['open', 'ogc'], axis=1, inplace=True)
+    print(df.head())
+    df.drop(['ogc'], axis=1, inplace=True)
     if len(df) == 0:
         return
     dfs = get_stocks_by_126(df['code'].to_list())
+    print(dfs)
     if len(dfs) > 0:
-        new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
         change = f'c_{cur_t}'
         if cur_t == '0930':
-            try:
-                new_df[change] = (new_df['now'] - new_df['open']) / new_df['open'] * 100
-            except:
-                new_df[change] = 0
-            new_df['ogc'] = (new_df['open'] - new_df['close']) / new_df['close'] * 100
-            columns = ['code', 'name', 'master', 'open', 'ogc', change]
-            df_a = new_df.loc[
-                (new_df['ogc'] < -3) &
-                (new_df[change] < 5)
-                , columns].sort_values(by=['ogc'], ascending=True)
-            if len(df_a) > 0:
-                last_df = df_a.head().round({change: 2, 'ogc': 2}).to_string(header=None)
-                chat_id = "@hollystock"
-                text = '%s 早盘预计会涨\n' % date + last_df
-                send_tg(text, chat_id)
-        if cur_t == '1430':
-            try:
-                new_df[change] = (new_df['now'] - new_df['open']) / new_df['open'] * 100
-            except:
-                new_df[change] = 0
-            new_df['ogc'] = (new_df['open'] - new_df['close']) / new_df['close'] * 100
-            columns = ['code', 'name', 'master', 'open', 'ogc', change]
-            df_a = new_df.loc[
-                (new_df["master"] > 7) &
-                (new_df['ogc'] < -2) &
-                (new_df[change] < 5)
-                , columns].sort_values(by=['master'], ascending=True)
-            if len(df_a) > 0:
-                last_df = df_a.head().round({change: 2, 'ogc': 2}).to_string(header=None)
-                chat_id = "@hollystock"
-                text = '%s 尾盘预计会涨\n' % date + last_df
-                send_tg(text, chat_id)
+            df.drop(['open'], axis=1, inplace=True)
+        else:
+            dfs.drop(['open'], axis=1, inplace=True)
+        new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
+        print(new_df.head())
         try:
             new_df[change] = (new_df['now'] - new_df['open']) / new_df['open'] * 100
         except:
@@ -210,17 +183,28 @@ def main(date, s_table, cur_t):
         new_df['ogc'] = (new_df['open'] - new_df['close']) / new_df['close'] * 100
         df_a = new_df.sort_values(by=['ogc'], ascending=True).set_index('create_date').round({change: 2, 'ogc': 2})
         df_a.drop(['now'], axis=1, inplace=True)
+
         print(df_a.head())
+
         try:
-            # delete those rows that we are going to "upsert"
             engine.execute(f"delete from {s_table} where create_date = '{date}'")
             trans.commit()
-
-            # insert changed rows
             df_a.to_sql(s_table, engine, if_exists='append', index=True)
         except:
             trans.rollback()
             raise
+
+        if cur_t == '0930':
+            columns = ['code', 'name', 'master', 'open', 'ogc', change]
+            df_b = new_df.loc[
+                (new_df['ogc'] < -9.7) &
+                (new_df[change] < 3)
+                , columns].sort_values(by=['ogc'], ascending=True)
+            if len(df_b) > 0:
+                last_df = df_b.to_string(header=None)
+                chat_id = "@hollystock"
+                text = '%s 早盘预计会涨\n' % date + last_df
+                send_tg(text, chat_id)
 
 
 if __name__ == '__main__':
@@ -241,6 +225,7 @@ if __name__ == '__main__':
         last_d = df.tail(1)['cal_date'].to_list()[0]
         cur_date = datetime.strptime(last_d, d_format)
         last_date = cur_date.strftime(date_format)
+        print(last_date)
         # 创建连接引擎
         engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
         conn = engine.connect()
@@ -256,3 +241,4 @@ if __name__ == '__main__':
             t_list.append('1630')
         if cur_t in t_list:
             main(last_date, s_table, cur_t)
+
