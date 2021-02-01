@@ -6,8 +6,6 @@ from datetime import datetime, timedelta
 from fake_useragent import UserAgent
 from sqlalchemy import create_engine
 import pandas as pd
-import numpy as np
-import tushare as ts
 import re
 import requests
 
