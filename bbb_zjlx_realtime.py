@@ -167,7 +167,7 @@ def main(date, s_table, cur_t):
     if len(df) == 0:
         return
     dfs = get_stocks_by_126(df['code'].to_list())
-    print(dfs)
+    print(dfs.head())
     if len(dfs) > 0:
         change = f'c_{cur_t}'
         if cur_t == '0930':
@@ -189,11 +189,7 @@ def main(date, s_table, cur_t):
         try:
             engine.execute(f"delete from {s_table} where create_date = '{date}'")
             trans.commit()
-<<<<<<< HEAD
             df_a.to_sql(s_table, engine, if_exists='append', index=True)
-=======
-            df_a.to_sql(s_table, engine, if_exists='append', index=False)
->>>>>>> b5035d10e7bd4c4ac899e606ab0ac870516df8e7
         except:
             trans.rollback()
             raise
@@ -201,7 +197,7 @@ def main(date, s_table, cur_t):
         if cur_t == '0930':
             columns = ['code', 'name', 'master', 'open', 'ogc', change]
             df_b = new_df.loc[
-                (new_df['ogc'] < -9.7) &
+                (new_df['ogc'] < -6) &
                 (new_df[change] < 3)
                 , columns].sort_values(by=['ogc'], ascending=True)
             if len(df_b) > 0:
@@ -242,9 +238,7 @@ if __name__ == '__main__':
         t_list = t_list_am + t_list_pm
         if dd.hour > 15:
             cur_t = '1630'
-            t_list.append('1630')
-        if dd.hour > 9:
-            cur_t = '0930'
+            t_list.append(cur_t)
         if cur_t in t_list:
             main(last_date, s_table, cur_t)
 
