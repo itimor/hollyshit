@@ -202,13 +202,24 @@ def main(date, s_table, cur_t):
         if cur_t == '0930':
             columns = ['code', 'name', 'master', 'open', 'ogc', change]
             df_b = new_df.loc[
-                (new_df['ogc'] < -6) &
+                (new_df['ogc'] < -9.7) &
                 (new_df[change] < 3)
                 , columns].sort_values(by=['ogc'], ascending=True)
             if len(df_b) > 0:
                 last_df = df_b.to_string(header=None)
                 chat_id = "@hollystock"
-                text = '%s 早盘预计会涨\n' % date + last_df
+                text = '%s 开局跌幅超9.7\n' % date + last_df
+                send_tg(text, chat_id)
+
+            df_b = new_df.loc[
+                (new_df['ogc'] < -9) &
+                (new_df['ogc'] < -7) &
+                (new_df[change] < 3)
+                , columns].sort_values(by=['ogc'], ascending=True)
+            if len(df_b) > 0:
+                last_df = df_b.to_string(header=None)
+                chat_id = "@hollystock"
+                text = '%s 开局跌幅超9.7\n' % date + last_df
                 send_tg(text, chat_id)
 
 
@@ -244,8 +255,6 @@ if __name__ == '__main__':
         if dd.hour > 15:
             cur_t = '1630'
             t_list.append(cur_t)
-        if dd.hour > 8:
-            cur_t = '0930'
         if cur_t in t_list:
             main(last_date, s_table, cur_t)
 

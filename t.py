@@ -8,7 +8,7 @@ import re
 import requests
 import os
 
-db = 'aaa'
+db = 'bbb'
 date_format = '%Y-%m-%d'
 d_format = '%Y%m%d'
 t_format = '%H%M'
