@@ -40,28 +40,30 @@ def get_stocks_by_sina(codes):
     dfs = []
     for i in range(n):
         a = code_list[m:m + limit]
-        m = (i + 1) * limit
-        url = f"http://hq.sinajs.cn/list={','.join(a)}"
-        headers = {'User-Agent': ua.random}
-        r = requests.get(url, headers=headers).text
-        X = re.split('";', r)
-        for x in X[:-1]:
-            y = re.split('="', x)
-            Y = re.split('hq_str_', y[0])[1]
-            pre_code = f'{Y[2:]}.{Y[:2].upper()}'
-            d = y[1].split(',')
-            if d[-1] == '00':
-                d_data = {
-                    'code': pre_code,
-                    'now': d[3],
-                }
-            else:
-                d_data = {
-                    'code': pre_code,
-                    'now': d[2],
-                }
+        print(a)
+        if len(a) > 0:
+            m = (i + 1) * limit
+            url = f"http://hq.sinajs.cn/list={','.join(a)}"
+            headers = {'User-Agent': ua.random}
+            r = requests.get(url, headers=headers).text
+            X = re.split('";', r)
+            for x in X[:-1]:
+                y = re.split('="', x)
+                Y = re.split('hq_str_', y[0])[1]
+                pre_code = f'{Y[2:]}.{Y[:2].upper()}'
+                d = y[1].split(',')
+                if d[-1] == '00':
+                    d_data = {
+                        'code': pre_code,
+                        'now': d[3],
+                    }
+                else:
+                    d_data = {
+                        'code': pre_code,
+                        'now': d[2],
+                    }
 
-            dfs.append(d_data)
+                dfs.append(d_data)
     dfs_json = json.dumps(dfs)
     df_a = pd.read_json(dfs_json, orient='records')
     return df_a
@@ -81,22 +83,24 @@ def get_stocks_by_qq(codes):
     dfs = []
     for i in range(n):
         a = code_list[m:m + limit]
-        m = (i + 1) * limit
-        s = '%.13f' % random.random()
-        url = f"http://qt.gtimg.cn/r={s}q={','.join(a)}"
-        headers = {'User-Agent': ua.random}
-        r = requests.get(url, headers=headers).text
-        X = re.split('";', r)
-        for x in X[:-1]:
-            y = re.split('="', x)
-            Y = re.split('v_s_', y[0])[1]
-            pre_code = f'{Y[2:]}.{Y[:2].upper()}'
-            d = y[1].split('~')
-            d_data = {
-                'code': pre_code,
-                'now': d[3]
-            }
-            dfs.append(d_data)
+        print(a)
+        if len(a) > 0:
+            m = (i + 1) * limit
+            s = '%.13f' % random.random()
+            url = f"http://qt.gtimg.cn/r={s}q={','.join(a)}"
+            headers = {'User-Agent': ua.random}
+            r = requests.get(url, headers=headers).text
+            X = re.split('";', r)
+            for x in X[:-1]:
+                y = re.split('="', x)
+                Y = re.split('v_s_', y[0])[1]
+                pre_code = f'{Y[2:]}.{Y[:2].upper()}'
+                d = y[1].split('~')
+                d_data = {
+                    'code': pre_code,
+                    'now': d[3]
+                }
+                dfs.append(d_data)
     dfs_json = json.dumps(dfs)
     df_a = pd.read_json(dfs_json, orient='records')
     return df_a
@@ -119,6 +123,7 @@ def get_stocks_by_126(codes):
     dfs = []
     for i in range(n):
         a = code_list[m:m + limit]
+        print(a)
         if len(a) > 0:
             m = (i + 1) * limit
             url = f"http://api.money.126.net/data/feed/{','.join(a)}"
@@ -239,6 +244,8 @@ if __name__ == '__main__':
         if dd.hour > 15:
             cur_t = '1630'
             t_list.append(cur_t)
+        if dd.hour > 8:
+            cur_t = '0930'
         if cur_t in t_list:
             main(last_date, s_table, cur_t)
 

@@ -90,9 +90,10 @@ if __name__ == '__main__':
     # 获得当天
     dd = datetime.now()
     cur_date = dd.strftime(date_format)
+    cur_date = '2021-02-02'
     cur_d = dd.strftime(d_format)
     cur_t = dd.strftime(t_format)
-    if dd.hour > 15:
+    if dd.hour > 1:
         # ts初始化
         ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
         df = ts_data.trade_cal(exchange='', start_date=cur_d, end_date=cur_d, is_open='1')
