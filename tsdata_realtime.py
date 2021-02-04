@@ -4,111 +4,104 @@
 
 from datetime import datetime, timedelta
 from telegram import Bot, ParseMode
-from fake_useragent import UserAgent
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 import pandas as pd
 import numpy as np
 import tushare as ts
 import requests
 import re
 import json
-import os
-
-ua = UserAgent()
-headers = {'User-Agent': ua.random}
+import random
 
 # 今日尾盘入  明日大涨 后天大大涨
 """
-SELECT * from b_new where ogc <-2 and super > 10 and change < 6 ORDER by super;
+SELECT * from b_new where ogc <-2 and master > 10 and change < 6 ORDER by master;
 """
 # 今日早盘入  明日大涨 后天大大涨
 """
-SELECT * from b_new where ogc <0 and super < 20 and big > 0 and small < 0 and close < 10 ORDER by ogc;
+SELECT * from b_new where ogc <0 and master < 20 and big > 0 and small < 0 and close < 10 ORDER by ogc;
+SELECT * from b_new_0930 where abs(ogc) <1 AND master < 10 AND master > 4 AND super < 12 AND super > 0 AND big < 0 AND small < 0 AND mid < 0 AND change < 5 ORDER by master;
 """
 
 
-def get_stocks(codes):
-    dfs = []
-    for pre_code in codes:
-        print(pre_code)
-        c = pre_code.split('.')
-        code = f'{c[1].lower()}{c[0]}'
-        url = f'http://hq.sinajs.cn/list={code}'
-        r = requests.get(url, headers=headers).text
-        X = re.split('";', r)[0]
-        X = re.split('="', X)[1]
-        d = X.split(',')
-        if d[-1] == '00':
-            d_data = {
-                'name': d[0],
-                'code': pre_code,
-                'open': d[1],
-                'now': d[3],
-                'high': d[4],
-                'low': d[5],
-                'change': (float(d[3]) - float(d[1])) / (float(d[1]) + 0.0001) * 100,
-                'ogc': (float(d[1]) - float(d[2])) / (float(d[2]) + 0.0001) * 100,
-            }
-        else:
-            d_data = {
-                'name': d[0],
-                'code': pre_code,
-                'open': d[2],
-                'now': d[2],
-                'high': d[2],
-                'low': d[2],
-                'change': 0.0,
-                'ogc': 0.0,
-            }
-        dfs.append(d_data)
-    dfs_json = json.dumps(dfs)
-    df_a = pd.read_json(dfs_json, orient='records')
+def get_stocks():
+    colunms_name = ['code', 'open', 'now']
+    df = ts_data.daily(ts_code='', start_date=next_d, end_date=next_d)
+    new_df = df.rename(columns={'ts_code': colunms_name[0], 'open': colunms_name[1], 'close': colunms_name[2]})
+    dfs = new_df[~ new_df['code'].str.contains('^300|^688|^900')]
+    df_a = dfs.loc[(dfs["now"] < 120), colunms_name]
     return df_a
 
 
-def send_tg(text, chat_id):
-    token = '723532221:AAH8SSfM7SfTe4HmhV72QdLbOUW3akphUL8'
-    bot = Bot(token=token)
-    chat_id = chat_id
-    bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
+def main(date, s_table, cur_t):
+    sql = f"select * from {s_table} where create_date = '{date}'"
+    df = pd.read_sql_query(sql, con=engine)
+    print(df.head())
+    df.drop(['ogc'], axis=1, inplace=True)
+    if len(df) == 0:
+        return
+    dfs = get_stocks()
+    print(dfs.head())
+    if len(dfs) > 0:
+        change = f'c_{cur_t}'
+        df.drop(['open'], axis=1, inplace=True)
+        new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
+        print(new_df.head())
+        try:
+            new_df[change] = (new_df['now'] - new_df['open']) / new_df['open'] * 100
+        except:
+            new_df[change] = 0
+        new_df['ogc'] = (new_df['open'] - new_df['close']) / new_df['close'] * 100
+        df_a = new_df.sort_values(by=['ogc'], ascending=True).set_index('create_date').round({change: 2, 'ogc': 2})
+        df_a.drop(['now'], axis=1, inplace=True)
 
+        print(df_a.head())
 
-def main(date):
-    colunms_name = ['code', 'close', 'return']
-    df = ts_data.daily(ts_code='', start_date=date, end_date=date)
-    new_df = df.rename(columns={'ts_code': colunms_name[0], 'close': colunms_name[1], 'pct_chg': colunms_name[2]})
-    dfs = new_df[~ new_df['code'].str.contains('^300|^688|^900')]
-    df_a = dfs.loc[
-        (dfs["return"] > 5) &
-        (dfs["close"] < 50)
-        , colunms_name]
-    dfs = get_stocks(df_a['code'].to_list())
-    df_b = pd.merge(df_a, dfs, how='inner', left_on=['code'], right_on=['code'])
-    columns = ['code', 'name', 'return', 'now', 'change', 'ogc']
-    df_c = df_b.loc[
-        (df_b["ogc"] < -3) &
-        (df_b["change"] < 5)
-        , columns].sort_values(by=['ogc'], ascending=True)
-    if len(df_c) > 0:
-        last_df = df_c.head().round({'change': 2, 'ogc': 2}).to_string(header=None)
-        chat_id = "@hollystock"
-        text = '%s 昨日涨幅>5今天低开前十\n' % date + last_df
-        send_tg(text, chat_id)
-
-    d_table = f'x_new'
-    last_df = df_b.sort_values(by=['ogc'], ascending=True)
-    last_df.to_sql(d_table, con=engine, index=False, if_exists='replace')
-    print(last_df.head())
+        try:
+            engine.execute(f"delete from {s_table} where create_date = '{date}'")
+            trans.commit()
+            df_a.to_sql(s_table, engine, if_exists='append', index=True)
+        except:
+            trans.rollback()
+            raise
 
 
 if __name__ == '__main__':
-    db = 'tsdata'
+    db = 'bbb'
+    date_format = '%Y-%m-%d'
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天
-    cur_date = '20210120'
-    if not os.path.exists(cur_date):
-        os.makedirs(cur_date)
-    ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
-    engine = create_engine(f'sqlite:///{cur_date}/{db}.db', echo=False, encoding='utf-8')
-    main(cur_date)
+    dd = datetime.now()
+    start_date = dd - timedelta(days=10)
+    end_date = dd - timedelta(days=1)
+    cur_t = dd.strftime(t_format)
+    if dd.hour > 8:
+        # ts初始化
+        ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
+        # df = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),
+        #                        end_date=end_date.strftime(d_format), is_open='1')
+        # last_d = df.tail(1)['cal_date'].to_list()[0]
+        last_d = '20210202'
+        next_d = '20210203'
+        cur_date = datetime.strptime(last_d, d_format)
+        last_date = cur_date.strftime(date_format)
+        print(last_date)
+        # 创建连接引擎
+        engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
+        conn = engine.connect()
+        trans = conn.begin()
+        s_table = f'zjlx'
+        t_list_am = [datetime.strftime(x, t_format) for x in
+                     pd.date_range(f'{cur_date} 09:30', f'{cur_date} 11:30', freq='30min')]
+        t_list_pm = [datetime.strftime(x, t_format) for x in
+                     pd.date_range(f'{cur_date} 13:30', f'{cur_date} 14:40', freq='30min')]
+        t_list = t_list_am + t_list_pm
+        if dd.hour > 15:
+            cur_t = '1630'
+            t_list.append(cur_t)
+        cur_t = '1630'
+        if cur_t in t_list:
+            main(last_date, s_table, cur_t)
+

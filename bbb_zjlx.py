@@ -90,7 +90,6 @@ if __name__ == '__main__':
     # 获得当天
     dd = datetime.now()
     cur_date = dd.strftime(date_format)
-    cur_date = '2021-02-02'
     cur_d = dd.strftime(d_format)
     cur_t = dd.strftime(t_format)
     if dd.hour > 1:
