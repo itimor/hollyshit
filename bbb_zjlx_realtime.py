@@ -255,6 +255,8 @@ if __name__ == '__main__':
         if dd.hour > 15:
             cur_t = '1630'
             t_list.append(cur_t)
+        # if dd.hour > 8:
+        #     cur_t = '0930'
         if cur_t in t_list:
             main(last_date, s_table, cur_t)
 
