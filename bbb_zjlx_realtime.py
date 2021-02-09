@@ -207,7 +207,7 @@ def main(date, s_table, cur_t):
                 (new_df[change] < 3)
                 , columns].sort_values(by=['ogc'], ascending=True)
             if len(df_b) > 0:
-                last_df = df_b[:10].to_string(header=None)
+                last_df = df_b[:5].to_string(header=None)
                 chat_id = "@hollystock"
                 text = '%s 低开大于-6小于-8\n' % date + last_df
                 send_tg(text, chat_id)
@@ -219,7 +219,7 @@ def main(date, s_table, cur_t):
                 (new_df[change] < 3)
                 , columns].sort_values(by=['return'], ascending=False)
             if len(df_b) > 0:
-                last_df = df_b[:10].to_string(header=None)
+                last_df = df_b[:5].to_string(header=None)
                 chat_id = "@hollystock"
                 text = '%s 涨幅小于1大于0.95，高开小于1\n' % date + last_df
                 send_tg(text, chat_id)

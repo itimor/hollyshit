@@ -74,7 +74,7 @@ def send_tg(text, chat_id):
     bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
 
 def main(date, s_table):
-    sql = f"select * from {s_table} where create_date = '{date}' and ogc  <1  ORDER by return desc"
+    sql = f"select * from {s_table} where create_date = '{date}' and ogc  <1.02  ORDER by return desc"
     df = pd.read_sql_query(sql, con=engine)
     if len(df) == 0:
         return
@@ -100,7 +100,7 @@ def main(date, s_table):
     if len(df_b) > 0:
         last_df = df_b[:10].to_string(header=None)
         chat_id = "@hollystock"
-        text = '%s 涨幅小于1大于0.95，高开小于1, ma排序\n' % date + last_df
+        text = '%s 开服小于1.02, ma排序从大到小\n' % date + last_df
         send_tg(text, chat_id)
 
 
