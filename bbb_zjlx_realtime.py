@@ -157,29 +157,6 @@ def get_stocks_by_126(codes):
     return df_a
 
 
-def get_stocks_ma(codes):
-    data = {
-        'code': codes,
-        'ma5': [],
-        'ma10': [],
-        'ma20': [],
-    }
-    for code in codes:
-        print(code)
-        df_code = ts_data.daily(ts_code=code, start_date=start_date.strftime(d_format),
-                                end_date=end_date.strftime(d_format))
-        for i in [5, 10, 20]:
-            dfs = df_code['close'].rolling(i).mean()
-            d = dfs[:i].to_list()[-1]
-            if str(d) == 'nan':
-                data['ma' + str(i)].append(0)
-            else:
-                data['ma' + str(i)].append(d)
-
-    df = pd.DataFrame(data)
-    return df
-
-
 def send_tg(text, chat_id):
     token = '723532221:AAH8SSfM7SfTe4HmhV72QdLbOUW3akphUL8'
     bot = Bot(token=token)
@@ -241,16 +218,10 @@ def main(date, s_table, cur_t):
                 (new_df['ogc'] < 1) &
                 (new_df[change] < 3)
                 , columns].sort_values(by=['return'], ascending=False)
-            df_30 = df_b['code'].to_list()[:30]
-            new_df_30 = pd.merge(df_b, df_30, how='inner', left_on=['code'], right_on=['code'])
-            df_a = new_df_30.loc[
-                (new_df_30['ma10'] > new_df_30['ma20']) &
-                (new_df_30[change] < 3)
-                , columns].sort_values(by=['return'], ascending=False)
-            if len(df_a) > 0:
-                last_df = df_a[:10].to_string(header=None)
+            if len(df_b) > 0:
+                last_df = df_b[:10].to_string(header=None)
                 chat_id = "@hollystock"
-                text = '%s 涨幅小于1大于0.95，高开小于1 ma10大于ma20\n' % date + last_df
+                text = '%s 涨幅小于1大于0.95，高开小于1\n' % date + last_df
                 send_tg(text, chat_id)
 
 

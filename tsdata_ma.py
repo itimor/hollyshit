@@ -4,6 +4,7 @@
 
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
+from telegram import Bot, ParseMode
 import pandas as pd
 import tushare as ts
 
@@ -16,7 +17,6 @@ def get_stocks(codes):
         'ma20': [],
     }
     for code in codes:
-        print(code)
         df_code = ts_data.daily(ts_code=code, start_date=start_date.strftime(d_format),
                                 end_date=end_date.strftime(d_format))
         for i in [5, 10, 20]:
@@ -31,38 +31,78 @@ def get_stocks(codes):
     return df
 
 
+def sort_stocks(df_boy):
+    codes = df_boy['code'].to_list()
+    df_a = df_boy.sort_values(by=['ma10_20'], ascending=False)
+    df_a_1 = df_a.reset_index(drop=True)
+    df_a_1.index += 1
+    df_b = df_boy.sort_values(by=['c_0930'], ascending=False)
+    df_b_1 = df_b.reset_index(drop=True)
+    df_b_1.index += 1
+    df_c = df_boy.sort_values(by=['ogc'], ascending=True)
+    df_c_1 = df_c.reset_index(drop=True)
+    df_c_1.index += 1
+    df_d = df_boy.sort_values(by=['return'], ascending=False)
+    df_d_1 = df_d.reset_index(drop=True)
+    df_d_1.index += 1
+
+    data = {
+        'code': codes,
+        'ma_x': [],
+        'c_9030_x': [],
+        'ogc_x': [],
+        'return_x': [],
+    }
+    for code in codes:
+        print(code)
+        a = df_a_1.index[df_a_1['code'] == code].to_list()[0]
+        data['ma_x'].append(a)
+        b = df_b_1.index[df_b_1['code'] == code].to_list()[0]
+        data['c_9030_x'].append(b)
+        c = df_c_1.index[df_c_1['code'] == code].to_list()[0]
+        data['ogc_x'].append(c)
+        d = df_d_1.index[df_d_1['code'] == code].to_list()[0]
+        data['return_x'].append(d)
+
+    df = pd.DataFrame(data)
+    return df
+
+def send_tg(text, chat_id):
+    token = '723532221:AAH8SSfM7SfTe4HmhV72QdLbOUW3akphUL8'
+    bot = Bot(token=token)
+    chat_id = chat_id
+    bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
+
 def main(date, s_table):
     sql = f"select * from {s_table} where create_date = '{date}' and ogc  <1  ORDER by return desc"
     df = pd.read_sql_query(sql, con=engine)
     if len(df) == 0:
         return
-    dfs = df['code'].to_list()[:30]
-    df_30 = get_stocks(dfs)
+    codes = df['code'].to_list()[:30]
+    df_30 = get_stocks(codes)
     new_df_30 = pd.merge(df, df_30, how='inner', left_on=['code'], right_on=['code'])
-    columns = ['code', 'name', 'return', 'open', 'ogc', 'c_0930']
-    df_a = new_df_30.loc[
+    new_df_30['ma10_20'] = (new_df_30['ma10'] - new_df_30['ma20']) / new_df_30['ma20']
+    columns = ['code', 'name', 'return', 'open', 'ogc', 'c_0930', 'ma10_20']
+    df_boy = new_df_30.loc[
         (new_df_30['ma10'] > new_df_30['ma20']) &
-        (new_df_30['c_0930'] < 3)
+        (new_df_30['ma10_20'] > 0.01) &
+        (new_df_30['c_0930'] < 3) &
+        (new_df_30['c_0930'] > -1) &
+        (new_df_30['close'] < 50)
         , columns].sort_values(by=['return'], ascending=False)
-    print(df_a)
+    df_sort = sort_stocks(df_boy)
+    new_df_sort = pd.merge(df_sort, df, how='inner', left_on=['code'], right_on=['code'])
+    weight = [5, 3, 2, 1]
+    new_df_sort['s'] = 10 / new_df_sort['ma_x'] * weight[0] + 10 / new_df_sort['c_9030_x'] * weight[1] + 10 / \
+                       new_df_sort['ogc_x'] * weight[2] + 10 / new_df_sort['return_x'] * weight[3]
+    columns = ['code', 'name', 'return', 'open', 'ogc', 'c_0930', 's']
+    df_b = new_df_sort[columns].sort_values(by=['s'], ascending=False)
+    if len(df_b) > 0:
+        last_df = df_b[:10].to_string(header=None)
+        chat_id = "@hollystock"
+        text = '%s 涨幅小于1大于0.95，高开小于1, ma排序\n' % date + last_df
+        send_tg(text, chat_id)
 
-
-"""
-         code  name  return   open   ogc  c_0930
-0   000802.SZ  北京文化   10.06   5.41 -1.10    2.03
-3   002054.SZ  德美化工   10.03  10.97 -1.97    2.92
-4   000712.SZ  锦龙股份   10.03  17.75 -0.11   -3.72
-7   000048.SZ  京基智农   10.00  26.02 -1.44   -0.08
-11  000807.SZ  云铝股份    9.95   8.96  0.11    2.79
-13  000425.SZ  徐工机械    8.59   6.40 -0.78   -0.16
-14  002747.SZ   埃斯顿    8.45  37.57  0.99   -2.42
-15  000680.SZ  山推股份    8.33   3.85 -1.28    0.52
-16  002271.SZ  东方雨虹    7.19  55.00 -0.87    0.65
-18  002652.SZ  扬子新材    7.05   3.31 -0.90    1.21
-19  002707.SZ  众信旅游    7.00   5.39 -2.00    2.41
-20  002123.SZ  梦网科技    6.98  14.87  0.00   -0.40
-26  000557.SZ  西部创业    6.51   4.04 -1.22    0.50
-"""
 
 if __name__ == '__main__':
     db = 'bbb'
@@ -70,7 +110,11 @@ if __name__ == '__main__':
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天
+    dt = '2021-02-05'
+    dd = datetime.strptime(dt, date_format)
     dd = datetime.now()
+    cur_dt = dd.strftime(date_format)
+    print(f'今天日期 {cur_dt}')
     start_date = dd - timedelta(days=31)
     end_date = dd - timedelta(days=1)
     cur_t = dd.strftime(t_format)
@@ -88,3 +132,4 @@ if __name__ == '__main__':
     trans = conn.begin()
     s_table = 'zjlx'
     main(last_date, s_table)
+
