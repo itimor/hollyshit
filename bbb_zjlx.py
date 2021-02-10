@@ -17,8 +17,6 @@ headers = {'User-Agent': ua.random}
 
 
 def get_stocks():
-    timestamp = datetime.timestamp(dd)
-    t1 = int(timestamp * 1000)
     num = 518  # 我要发
     df_list = list()
     for n in range(1, 9):

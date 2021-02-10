@@ -67,6 +67,7 @@ def sort_stocks(df_boy):
     df = pd.DataFrame(data)
     return df
 
+
 def send_tg(text, chat_id):
     token = '723532221:AAH8SSfM7SfTe4HmhV72QdLbOUW3akphUL8'
     bot = Bot(token=token)
@@ -120,9 +121,9 @@ if __name__ == '__main__':
     cur_t = dd.strftime(t_format)
     # ts初始化
     ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
-    df = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),
+    df_ts = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),
                            end_date=end_date.strftime(d_format), is_open='1')
-    last_d = df.tail(1)['cal_date'].to_list()[0]
+    last_d = df_ts.tail(1)['cal_date'].to_list()[0]
     cur_date = datetime.strptime(last_d, d_format)
     last_date = cur_date.strftime(date_format)
     print(last_date)

@@ -71,7 +71,6 @@ def get_stocks_by_sina(codes):
 
 # 获取实时行情-腾讯接口
 def get_stocks_by_qq(codes):
-    return
     limit = 18  # 要发
     code_list = []
     for pre_code in codes:
@@ -237,10 +236,11 @@ if __name__ == '__main__':
     cur_t = dd.strftime(t_format)
     if dd.hour > 8:
         # ts初始化
-        ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
-        df = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),
+        ts.set_token('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
+        ts_data = ts.pro_api()
+        df_ts = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),
                                end_date=end_date.strftime(d_format), is_open='1')
-        last_d = df.tail(1)['cal_date'].to_list()[0]
+        last_d = df_ts.tail(1)['cal_date'].to_list()[0]
         cur_date = datetime.strptime(last_d, d_format)
         last_date = cur_date.strftime(date_format)
         print(last_date)
