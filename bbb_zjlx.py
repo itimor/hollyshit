@@ -51,7 +51,7 @@ def get_stocks():
     df.drop(['pre_code'], axis=1, inplace=True)
     df_st = df[~ df['name'].str.contains('ST')]
     df_close_null = df_st.loc[df_st['close'] != '-']
-    last_df = df_close_null[~ df_close_null['code'].str.contains('^200|^300|^688|^900')]
+    last_df = df_close_null[~ df_close_null['code'].str.contains('^200|^300|^688|^900|^N|^C')]
     print(last_df)
     return last_df
 
