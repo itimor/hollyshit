@@ -22,8 +22,23 @@ SELECT * from b_new_0930 where abs(ogc) <1 AND master < 10 AND master > 4 AND su
 # 获取实时行情-tushare接口
 def get_stocks_tushare():
     df = ts.get_today_all()
-    columns = ['code', 'open', 'now']
-    dfs = df.rename(columns={'ts_code': columns[0], 'trade': columns[2]})
+    columns = ['code', 'open_x', 'now']
+    dfs = df.rename(columns={'ts_code': columns[0], 'open': columns[2]})
+    s_codes = []
+    for i in dfs['code']:
+        if len(str(i)) < 6:
+            s = '0' * (6 - len(str(i))) + str(i)
+        else:
+            s = str(i)
+        if s[0] == '6':
+            s = s + '.SH'
+        else:
+            s = s + '.SZ'
+        if len(s_codes) == 0:
+            s_codes = [s]
+        else:
+            s_codes.append(s)
+    dfs['code'] = s_codes
     last_df = dfs[columns]
     return last_df
 
@@ -51,24 +66,25 @@ def main(date, s_table, cur_t):
         else:
             dfs.drop(['open'], axis=1, inplace=True)
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
+        if len(new_df) == 0:
+            return
         print(new_df.head())
         try:
-            new_df[change] = (new_df['now'] - new_df['open']) / new_df['open'] * 100
+            new_df[change] = (new_df['now'] - new_df['open_x']) / new_df['open_x'] * 100
         except:
             new_df[change] = 0
-        new_df['ogc'] = (new_df['open'] - new_df['close']) / new_df['close'] * 100
+        new_df['ogc'] = (new_df['open_x'] - new_df['close']) / new_df['close'] * 100
         df_a = new_df.sort_values(by=['ogc'], ascending=True).set_index('create_date').round({change: 2, 'ogc': 2})
-        df_a.drop(['now'], axis=1, inplace=True)
-
+        df_a.drop(['now', 'open_x'], axis=1, inplace=True)
         print(df_a.head())
 
-        # try:
-        #     engine.execute(f"delete from {s_table} where create_date = '{date}' and code in {df_a['code'].to_list()}")
-        #     trans.commit()
-        #     df_a.to_sql(s_table, engine, if_exists='append', index=True)
-        # except:
-        #     trans.rollback()
-        #     raise
+        try:
+            engine.execute(f"delete from {s_table} where create_date = '{date}' and code in {tuple(df_a['code'].to_list())}")
+            trans.commit()
+            df_a.to_sql(s_table, engine, if_exists='append', index=True)
+        except:
+            trans.rollback()
+            raise
 
         if cur_t == '0930':
             columns = ['code', 'name', 'return', 'open', 'ogc', change]

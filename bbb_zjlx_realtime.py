@@ -179,6 +179,8 @@ def main(date, s_table, cur_t):
         else:
             dfs.drop(['open'], axis=1, inplace=True)
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
+        if len(new_df) == 0:
+            return
         print(new_df.head())
         try:
             new_df[change] = (new_df['now'] - new_df['open']) / new_df['open'] * 100
@@ -191,7 +193,7 @@ def main(date, s_table, cur_t):
         print(df_a.head())
 
         try:
-            engine.execute(f"delete from {s_table} where create_date = '{date}' and code in {df_a['code'].to_list()}")
+            engine.execute(f"delete from {s_table} where create_date = '{date}' and code in {tuple(df_a['code'].to_list())}")
             trans.commit()
             df_a.to_sql(s_table, engine, if_exists='append', index=True)
         except:
