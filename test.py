@@ -5,5 +5,6 @@
 from datetime import datetime, timedelta
 import tushare as ts
 
-
-data = {'code': ['000802.SZ', '002534.SZ', '002610.SZ', '002054.SZ', '000712.SZ'], 'ma5': [5.1579999999999995, 5.029, nan, 8.594, 8.604000000000001, nan, 2.396, 2.408, nan, 10.632, 10.165000000000001, nan, 16.3, 16.095, nan], 'ma10': [5.1579999999999995, 5.029, nan, 8.594, 8.604000000000001, nan, 2.396, 2.408, nan, 10.632, 10.165000000000001, nan, 16.3, 16.095, nan], 'ma20': [5.1579999999999995, 5.029, nan, 8.594, 8.604000000000001, nan, 2.396, 2.408, nan, 10.632, 10.165000000000001, nan, 16.3, 16.095, nan]}
+ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
+df = ts_data.trade_cal(exchange='', start_date='20210101', end_date='20210131', is_open='1')
+print(df['cal_date'].to_list())

@@ -8,6 +8,6 @@ node_modules/
 package-lock.json
 .vscode/
 venv/
-blog.db
+aaa.db
 res/
 whoosh_index/
