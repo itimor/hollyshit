@@ -9,18 +9,63 @@ import pandas as pd
 import tushare as ts
 
 
-def get_stocks(codes, date):
-    date = '2021-02-09'
-    code_list = []
-    columns = ['open', 'close', 'price_change', 'p_change', 'ma5', 'ma10', 'ma20', 'turnover']
-    for pre_code in codes:
-        code = pre_code.split('.')
-        df = ts.get_hist_data(code[0], start=date, end=date)
-        print(df[columns])
-        bol = df[df['ma10'] > df['ma20']]
-        if len(bol) > 0:
-            code_list.append(pre_code)
-    return code_list
+def get_stocks(codes):
+    data = {
+        'code': codes,
+        'ma5': [],
+        'ma10': [],
+        'ma20': [],
+    }
+    for code in codes:
+        df_code = ts_data.daily(ts_code=code, start_date=start_date.strftime(d_format),
+                                end_date=end_date.strftime(d_format))
+        for i in [5, 10, 20]:
+            dfs = df_code['close'].rolling(i).mean()
+            d = dfs[:i].to_list()[-1]
+            if str(d) == 'nan':
+                data['ma' + str(i)].append(0)
+            else:
+                data['ma' + str(i)].append(d)
+
+    df = pd.DataFrame(data)
+    return df
+
+
+def sort_stocks(df_boy):
+    codes = df_boy['code'].to_list()
+    df_a = df_boy.sort_values(by=['ma10_20'], ascending=False)
+    df_a_1 = df_a.reset_index(drop=True)
+    df_a_1.index += 1
+    df_b = df_boy.sort_values(by=['c_0930'], ascending=False)
+    df_b_1 = df_b.reset_index(drop=True)
+    df_b_1.index += 1
+    df_c = df_boy.sort_values(by=['ogc'], ascending=True)
+    df_c_1 = df_c.reset_index(drop=True)
+    df_c_1.index += 1
+    df_d = df_boy.sort_values(by=['return'], ascending=False)
+    df_d_1 = df_d.reset_index(drop=True)
+    df_d_1.index += 1
+
+    data = {
+        'code': codes,
+        'ma_x': [],
+        'c_9030_x': [],
+        'ogc_y': [],
+        'return_x': [],
+    }
+    for code in codes:
+        print(code)
+        a = df_a_1.index[df_a_1['code'] == code].to_list()[0]
+        data['ma_x'].append(a)
+        b = df_b_1.index[df_b_1['code'] == code].to_list()[0]
+        data['c_9030_x'].append(b)
+        c = df_c_1.index[df_c_1['code'] == code].to_list()[0]
+        data['ogc_y'].append(c)
+        d = df_d_1.index[df_d_1['code'] == code].to_list()[0]
+        data['return_x'].append(d)
+
+    df = pd.DataFrame(data)
+    return df
 
 
 def send_tg(text, chat_id):
@@ -30,15 +75,35 @@ def send_tg(text, chat_id):
     bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
 
 
-def main():
-    s_date = '20210209'
-    d_date = '20210210'
-    sql = f"select * from tsdata where trade_date = {s_date} and code in (select code from tsdata where trade_date = {d_date} and ogc_x  <1.02) ORDER by return desc limit 30;"
+def main(date, s_table):
+    sql = f"select * from {s_table} where create_date = '{date}' and ogc  <1.02  ORDER by return desc"
     df = pd.read_sql_query(sql, con=engine)
     if len(df) == 0:
         return
-    df_30 = get_stocks(df['code'].to_list(), s_date)
-    print(df_30)
+    codes = df['code'].to_list()[:30]
+    df_30 = get_stocks(codes)
+    new_df_30 = pd.merge(df, df_30, how='inner', left_on=['code'], right_on=['code'])
+    new_df_30['ma10_20'] = (new_df_30['ma10'] - new_df_30['ma20']) / new_df_30['ma20']
+    columns = ['code', 'name', 'return', 'ogc', 'c_0930', 'ma10_20']
+    df_boy = new_df_30.loc[
+        (new_df_30['ma10'] > new_df_30['ma20']) &
+        (new_df_30['ma10_20'] > 0.01) &
+        (new_df_30['c_0930'] < 3) &
+        (new_df_30['c_0930'] > -1) &
+        (new_df_30['close'] < 50)
+        , columns].sort_values(by=['return'], ascending=False)
+    df_sort = sort_stocks(df_boy)
+    new_df_sort = pd.merge(df_sort, df, how='inner', left_on=['code'], right_on=['code'])
+    weight = [5, 3, 2, 1]
+    new_df_sort['s'] = 10 / new_df_sort['ma_x'] * weight[0] + 10 / new_df_sort['c_9030_x'] * weight[1] + 10 / \
+                       new_df_sort['ogc_y'] * weight[2] + 10 / new_df_sort['return_x'] * weight[3]
+    columns = ['code', 'name', 'return', 'ogc', 'c_0930', 's']
+    df_b = new_df_sort[columns].sort_values(by=['s'], ascending=False)
+    if len(df_b) > 0:
+        last_df = df_b[:10].to_string(header=None)
+        chat_id = "@hollystock"
+        text = '%s 开服小于1.02, ma排序从大到小\n' % date + last_df
+        send_tg(text, chat_id)
 
 
 if __name__ == '__main__':
@@ -56,10 +121,9 @@ if __name__ == '__main__':
     end_date = dd - timedelta(days=1)
     cur_t = dd.strftime(t_format)
     # ts初始化
-    ts.set_token('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
-    ts_data = ts.pro_api()
+    ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
     df_ts = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),
-                              end_date=end_date.strftime(d_format), is_open='1')
+                           end_date=end_date.strftime(d_format), is_open='1')
     last_d = df_ts.tail(1)['cal_date'].to_list()[0]
     cur_date = datetime.strptime(last_d, d_format)
     last_date = cur_date.strftime(date_format)
@@ -69,4 +133,5 @@ if __name__ == '__main__':
     conn = engine.connect()
     trans = conn.begin()
     s_table = 'tsdata'
-    main()
+    main(last_date, s_table)
+
