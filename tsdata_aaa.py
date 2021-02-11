@@ -21,9 +21,7 @@ def main(date):
     if len(dfs) == 0:
         return
     columns = ['trade_date', 'code', 'name', 'open', 'close', 'return', 'pre_close', 'vol', 'amount']
-    df = dfs.rename(
-        columns={'trade_date': columns[0], 'ts_code': columns[1], 'close': columns[4], 'pct_chg': columns[5],
-                 'vol': columns[9]})
+    df = dfs.rename(columns={'trade_date': columns[0], 'ts_code': columns[1], 'close': columns[4], 'pct_chg': columns[5]})
     df = df[~ df['code'].str.contains('^200|^300|^688|^900|^N|^C')]
     df_name = get_stock_name()
     df_merge = pd.merge(df, df_name, how='inner', left_on=['code'], right_on=['ts_code'])
@@ -70,7 +68,7 @@ if __name__ == '__main__':
     # ts初始化
     ts.set_token('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
     ts_data = ts.pro_api()
-    df_ts = ts_data.trade_cal(exchange='', start_date=cur_d, end_date=cur_d, is_open='1')
+    df_ts = ts_data.trade_cal(exchange='', start_date='20210210', end_date='20210210', is_open='1')
     trade_days = df_ts['cal_date'].to_list()
     # 创建连接引擎
     engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
