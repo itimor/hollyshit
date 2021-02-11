@@ -115,7 +115,7 @@ def main(date, s_table, cur_t):
         print(df_a.head())
 
         try:
-            engine.execute(f"delete from {s_table} where create_date = '{date}' and code in {tuple(df_a['code'].to_list())}")
+            conn.execute(f"delete from {s_table} where create_date = '{date}' and code in {tuple(df_a['code'].to_list())}")
             trans.commit()
             df_a.to_sql(s_table, engine, if_exists='append', index=True)
         except:

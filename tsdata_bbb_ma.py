@@ -74,6 +74,7 @@ def send_tg(text, chat_id):
     chat_id = chat_id
     bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
 
+
 def main(date, s_table):
     sql = f"select * from {s_table} where create_date = '{date}' and ogc  <1.02  ORDER by return desc"
     df = pd.read_sql_query(sql, con=engine)

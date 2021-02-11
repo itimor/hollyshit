@@ -56,7 +56,7 @@ def main(date, s_table, t):
         print(df_a.head())
         try:
             # delete those rows that we are going to "upsert"
-            engine.execute(f"delete from {s_table} where create_date = '{date}'")
+            conn.execute(f"delete from {s_table} where create_date = '{date}'")
             trans.commit()
 
             # insert changed rows

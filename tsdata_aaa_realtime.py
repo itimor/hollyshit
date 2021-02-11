@@ -24,7 +24,7 @@ def get_stocks_tushare():
     df = ts.get_today_all()
     columns = ['code', 'now', 'open_x', 'ogc']
     df['ogc'] = (df['open'] - df['settlement']) / df['settlement'] * 100
-    dfs = df.rename(columns={'ts_code': columns[0], 'open': columns[2]})
+    dfs = df.rename(columns={'ts_code': columns[0], 'trade': columns[1], 'open': columns[2]})
     s_codes = []
     for i in dfs['code']:
         if len(str(i)) < 6:
@@ -52,11 +52,11 @@ def send_tg(text, chat_id):
 
 
 def main(date, s_table, cur_t):
-    print(last_date)
-    sql = f"select * from {s_table} where create_date = '{date}'"
+    print(date)
+    sql = f"select * from {s_table} where trade_date = '{date}'"
     df = pd.read_sql_query(sql, con=engine)
-    print(df.head())
     df.drop(['ogc'], axis=1, inplace=True)
+    print(df.head())
     if len(df) == 0:
         return
     dfs = get_stocks_tushare()
@@ -64,9 +64,9 @@ def main(date, s_table, cur_t):
     if len(dfs) > 0:
         change = f'c_{cur_t}'
         if cur_t == '0930':
-            df.drop(['open'], axis=1, inplace=True)
+            df.drop(['open_x'], axis=1, inplace=True)
         else:
-            dfs.drop(['open'], axis=1, inplace=True)
+            dfs.drop(['open_x'], axis=1, inplace=True)
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
         if len(new_df) == 0:
             return
@@ -75,12 +75,12 @@ def main(date, s_table, cur_t):
             new_df[change] = (new_df['now'] - new_df['open_x']) / new_df['open_x'] * 100
         except:
             new_df[change] = 0
-        df_a = new_df.sort_values(by=['ogc'], ascending=True).set_index('create_date').round({change: 2, 'ogc': 2})
+        df_a = new_df.sort_values(by=['ogc'], ascending=True).set_index('trade_date').round({change: 2, 'ogc': 2})
         df_a.drop(['now', 'open_x'], axis=1, inplace=True)
         print(df_a.head())
 
         try:
-            engine.execute(f"delete from {s_table} where create_date = '{date}' and code in {tuple(df_a['code'].to_list())}")
+            conn.execute(f"delete from {s_table} where trade_date = '{date}' and code in {tuple(df_a['code'].to_list())}")
             trans.commit()
             df_a.to_sql(s_table, engine, if_exists='append', index=True)
         except:
@@ -88,7 +88,7 @@ def main(date, s_table, cur_t):
             raise
 
         if cur_t == '0930':
-            columns = ['code', 'name', 'return', 'open', 'ogc', change]
+            columns = ['code', 'name', 'return', 'open_x', 'ogc', change]
             df_b = new_df.loc[
                 (new_df['ogc'] < 8) &
                 (new_df['ogc'] < 6) &
@@ -135,7 +135,7 @@ if __name__ == '__main__':
         engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
         conn = engine.connect()
         trans = conn.begin()
-        s_table = f'zjlx'
+        s_table = f'tsdata'
         t_list_am = [datetime.strftime(x, t_format) for x in
                      pd.date_range(f'{cur_date} 09:30', f'{cur_date} 11:30', freq='30min')]
         t_list_pm = [datetime.strftime(x, t_format) for x in
