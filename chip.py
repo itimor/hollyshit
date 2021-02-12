@@ -177,7 +177,6 @@ class ChipDistribution():
 
     def cost(self, N):
         date = self.data['date']
-
         N = N / 100  # 转换成百分比
         ans = []
         for i in self.ChipList:  # 我的ChipList本身就是有顺序的
@@ -198,7 +197,6 @@ class ChipDistribution():
         # import matplotlib.pyplot as plt
         # plt.plot(date[len(date) - 1000:-1], ans[len(date) - 1000:-1])
         # plt.show()
-        print(ans)
         return ans
 
 
@@ -208,5 +206,4 @@ if __name__ == "__main__":
     a.calcuChip(flag=1, AC=1)  # 计算
     a.winner()  # 获利盘
     a.cost(90)  # 成本分布
-
     a.lwinner()
