@@ -36,7 +36,7 @@ def main(date):
         change = f'c_{t}'
         new_df[[change]] = 0.0
     new_df[['ogc']] = 0.0
-    last_df = new_df.set_index('trade_date').round({'vol': 2, 'amount': 2, 'return': 2, 'ogc': 2})
+    last_df = new_df.set_index('trade_date').round({'vol': 2, 'amount': 2, 'return': 2, 'ogc_x': 2, 'ogc': 2})
     print(last_df.head())
     last_df.to_sql(s_table, con=engine, index=True, if_exists='append')
 
