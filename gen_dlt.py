@@ -1,4 +1,5 @@
-#!/bin/bash
+# -*- coding: utf-8 -*-
+# author: itimor
 
 import requests
 from fake_useragent import UserAgent
