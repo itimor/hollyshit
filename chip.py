@@ -25,6 +25,7 @@ class ChipDistribution():
         df = ts.get_hist_data(code=stock, start=start_date.strftime(date_format), end=end_date.strftime(date_format))
         df['date'] = df.index
         self.data = df
+        self.price = df['close'].to_list()[0]
 
     def calcuJUN(self, dateT, highT, lowT, volT, TurnoverRateT, A, minD):
 
@@ -205,9 +206,9 @@ class ChipDistribution():
 
 
 if __name__ == "__main__":
-    stock = '603993'
+    #stock = '603993'
     #stock = '002532'
-    #stock = '600121'
+    stock = '600121'
     date_format = '%Y-%m-%d'
     d_format = '%Y%m%d'
     dd = datetime.now()
@@ -229,6 +230,21 @@ if __name__ == "__main__":
     r = dict()
     for i in range(len(c)):
         r[c[i]] = l[i]
+    h_list = []
+    l_list = []
     for i in sorted(r.keys()):
-        print(f'{i}\t{r[i]}')
+        # print(f'{i}\t{r[i]}')
+        if r[i]:
+            if i > a.price:
+                h_list.append(r[i])
+            else:
+                l_list.append(r[i])
+    h_sum = sum(h_list)
+    l_sum = sum(l_list)
+    print(h_sum)
+    print(l_sum)
+    # 计算获利比率
+    h_per = h_sum / (h_sum + l_sum) * 100
+    l_per = l_sum / (h_sum + l_sum) * 100
+    print(f'获利比例 {l_per}%')
 
