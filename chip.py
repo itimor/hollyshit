@@ -205,7 +205,9 @@ class ChipDistribution():
 
 
 if __name__ == "__main__":
-    stock = '000892'
+    stock = '603993'
+    #stock = '002532'
+    #stock = '600121'
     date_format = '%Y-%m-%d'
     d_format = '%Y%m%d'
     dd = datetime.now()
