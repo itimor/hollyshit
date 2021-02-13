@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 # author: itimor
 
+from datetime import datetime, timedelta
 import pandas as pd
+import tushare as ts
 import copy
 
 """
@@ -15,8 +17,14 @@ class ChipDistribution():
         self.Chip = {}  # 当前获利盘
         self.ChipList = {}  # 所有的获利盘的
 
-    def get_data(self):
-        self.data = pd.read_csv('test.csv')
+    # def get_data_from_csv(self):
+    #     self.data = pd.read_csv('test.csv')
+
+    def get_data_from_tushare(self, stock, start_date, end_date):
+        # df = ts_data.daily(ts_code=stock, start_date=start_date.strftime(d_format), end_date=end_date.strftime(d_format))
+        df = ts.get_hist_data(code=stock, start=start_date.strftime(date_format), end=end_date.strftime(date_format))
+        df['date'] = df.index
+        self.data = df
 
     def calcuJUN(self, dateT, highT, lowT, volT, TurnoverRateT, A, minD):
 
@@ -89,20 +97,19 @@ class ChipDistribution():
         low = self.data['low']
         high = self.data['high']
         vol = self.data['volume']
-        TurnoverRate = self.data['TurnoverRate']
-        avg = self.data['avg']
+        TurnoverRate = self.data['turnover']
+        avg = (high + low) / 2
         date = self.data['date']
 
         for i in range(len(date)):
-            #     if i < 90:
-            #         continue
+            # if i < 90:
+            #     continue
 
             highT = high[i]
             lowT = low[i]
             volT = vol[i]
             TurnoverRateT = TurnoverRate[i]
             avgT = avg[i]
-            # print(date[i])
             dateT = date[i]
             # 东方财富的小数位要注意，兄弟萌。我不除100懵逼了
             self.calcu(dateT, highT, lowT, avgT, volT, TurnoverRateT / 100, flag=flag, AC=AC)
@@ -150,16 +157,13 @@ class ChipDistribution():
         # import matplotlib.pyplot as plt
         # plt.plot(date[len(date) - 200:-1], Profit[len(date) - 200:-1])
         # plt.show()
-        print(Profit)
         return Profit
 
     def lwinner(self, N=5, p=None):
-
         data = copy.deepcopy(self.data)
         date = data['date']
         ans = []
         for i in range(len(date)):
-            print(date[i])
             if i < N:
                 ans.append(None)
                 continue
@@ -201,9 +205,28 @@ class ChipDistribution():
 
 
 if __name__ == "__main__":
+    stock = '000892'
+    date_format = '%Y-%m-%d'
+    d_format = '%Y%m%d'
+    dd = datetime.now()
+    cur_d = dd.strftime(d_format)
+    print(f'今天日期 {cur_d}')
+    start_date = dd - timedelta(days=256)
+    end_date = dd - timedelta(days=1)
+    # ts初始化
+    ts.set_token('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
+    ts_data = ts.pro_api()
+
     a = ChipDistribution()
-    a.get_data()  # 获取数据
+    # a.get_data_from_csv()  # 获取数据
+    a.get_data_from_tushare(stock, start_date, end_date)  # 获取数据
     a.calcuChip(flag=1, AC=1)  # 计算
     a.winner()  # 获利盘
-    a.cost(90)  # 成本分布
-    a.lwinner()
+    c = a.cost(90)  # 成本分布
+    l = a.lwinner()
+    r = dict()
+    for i in range(len(c)):
+        r[c[i]] = l[i]
+    for i in sorted(r.keys()):
+        print(f'{i}\t{r[i]}')
+
