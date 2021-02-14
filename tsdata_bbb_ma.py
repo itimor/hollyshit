@@ -9,6 +9,8 @@ import pandas as pd
 import tushare as ts
 
 
+day_list = [3, 5, 10, 20]
+
 def get_stocks(codes):
     data = {
         'code': codes,
@@ -19,7 +21,7 @@ def get_stocks(codes):
     for code in codes:
         df_code = ts_data.daily(ts_code=code, start_date=start_date.strftime(d_format),
                                 end_date=end_date.strftime(d_format))
-        for i in [5, 10, 20]:
+	for i in day_list:
             dfs = df_code['close'].rolling(i).mean()
             d = dfs[:i].to_list()[-1]
             if str(d) == 'nan':
@@ -83,6 +85,8 @@ def main(date, s_table):
     codes = df['code'].to_list()[:30]
     df_30 = get_stocks(codes)
     new_df_30 = pd.merge(df, df_30, how='inner', left_on=['code'], right_on=['code'])
+    new_df_30['ma3_5'] = (new_df_30['ma3'] - new_df_30['ma5']) / new_df_30['ma5']
+    new_df_30['ma5_10'] = (new_df_30['ma5'] - new_df_30['ma10']) / new_df_30['ma10']
     new_df_30['ma10_20'] = (new_df_30['ma10'] - new_df_30['ma20']) / new_df_30['ma20']
     columns = ['code', 'name', 'return', 'open', 'ogc', 'c_0930', 'ma10_20']
     df_boy = new_df_30.loc[
@@ -104,6 +108,7 @@ def main(date, s_table):
         chat_id = "@hollystock"
         text = '%s 开服小于1.02, ma排序从大到小\n' % date + last_df
         send_tg(text, chat_id)
+    last_df.to_sql('ma', con=engine, index=True, if_exists='append')
 
 
 if __name__ == '__main__':

@@ -8,6 +8,9 @@ import copy
 
 """
 https://blog.csdn.net/santirenpc/article/details/91411628
+https://bigquant.com/community/t/topic/110545
+http://xqdoc.imedao.com/169d51450804c03f3fed727b.pdf
+https://bigquant.com/community/t/topic/168044
 """
 
 
@@ -224,7 +227,8 @@ if __name__ == "__main__":
     # a.get_data_from_csv()  # 获取数据
     a.get_data_from_tushare(stock, start_date, end_date)  # 获取数据
     a.calcuChip(flag=1, AC=1)  # 计算
-    a.winner()  # 获利盘
+    w = a.winner()  # 获利盘
+    print(w)
     c = a.cost(90)  # 成本分布
     l = a.lwinner()
     r = dict()
@@ -241,8 +245,6 @@ if __name__ == "__main__":
                 l_list.append(r[i])
     h_sum = sum(h_list)
     l_sum = sum(l_list)
-    print(h_sum)
-    print(l_sum)
     # 计算获利比率
     h_per = h_sum / (h_sum + l_sum) * 100
     l_per = l_sum / (h_sum + l_sum) * 100
