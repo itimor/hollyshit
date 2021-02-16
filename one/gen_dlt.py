@@ -8,7 +8,17 @@ from collections import Counter
 ua = UserAgent()
 
 
-def get_lottery():
+def fib_loop_while(n):
+    a, b = 1, 1
+    for i in range(0, n):
+        a, b = b, a + b
+        yield a
+
+
+pai = [i for i in fib_loop_while(10)]
+
+
+def get_dlt_lottery():
     headers = {
         'referer': 'https://www.lottery.gov.cn/kj/kjlb.html?dlt',
         'User-Agent': ua.random
@@ -20,18 +30,12 @@ def get_lottery():
         'isVerify': 1,
         'pageNo': 1,
     }
-    r = requests.get('https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry', params=params, headers=headers)
+    r = requests.get('https://webapi.sporttery.cn/gateway/lottery/getHistoryPageListV1.qry', params=params,
+                     headers=headers)
     if r.status_code == 200:
         return r.json()['value']['list']
     else:
         return r.text
-
-
-def fib_loop_while(n):
-    a, b = 1, 1
-    for i in range(0, n):
-        a, b = b, a+b
-        yield a
 
 
 def get_red_result(n):
@@ -41,7 +45,7 @@ def get_red_result(n):
         all_ball += red_list[i]
 
     b = Counter(all_ball)
-    result = [i for i in b.keys()][:5]
+    result = [i for i in b.keys()]
     return result
 
 
@@ -52,13 +56,12 @@ def get_blue_result(n):
         all_ball += blue_list[i]
 
     b = Counter(all_ball)
-    result = [i for i in b.keys()][:2]
+    result = [i for i in b.keys()]
     return result
 
 
 if __name__ == '__main__':
-    pai = [i for i in fib_loop_while(10)]
-    qiu_list = get_lottery()
+    qiu_list = get_dlt_lottery()
     red_list = [i['lotteryDrawResult'].split()[:5] for i in qiu_list]
     blue_list = [i['lotteryDrawResult'].split()[5:] for i in qiu_list]
     # print(red_list)
@@ -68,8 +71,8 @@ if __name__ == '__main__':
     # 选几组号码
     n = 4
     for k, v in enumerate(pai[:n]):
-        a = get_red_result(v)
-        b = get_blue_result(v)
+        a = get_red_result(v)[:5]
+        b = get_blue_result(v)[:2]
         red = ' '.join(a)
         blue = ' '.join(b)
         r = f'红球：{red} 蓝球：{blue}'
