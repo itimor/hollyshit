@@ -14,6 +14,7 @@ day_list = [3, 5, 10, 20]
 def get_stocks(codes):
     data = {
         'code': codes,
+        'ma3': [],
         'ma5': [],
         'ma10': [],
         'ma20': [],
@@ -21,7 +22,7 @@ def get_stocks(codes):
     for code in codes:
         df_code = ts_data.daily(ts_code=code, start_date=start_date.strftime(d_format),
                                 end_date=end_date.strftime(d_format))
-	for i in day_list:
+        for i in day_list:
             dfs = df_code['close'].rolling(i).mean()
             d = dfs[:i].to_list()[-1]
             if str(d) == 'nan':
@@ -108,7 +109,7 @@ def main(date, s_table):
         chat_id = "@hollystock"
         text = '%s 开服小于1.02, ma排序从大到小\n' % date + last_df
         send_tg(text, chat_id)
-    last_df.to_sql('ma', con=engine, index=True, if_exists='append')
+    df_b.to_sql('ma', con=engine, index=True, if_exists='append')
 
 
 if __name__ == '__main__':

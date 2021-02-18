@@ -63,10 +63,6 @@ def main(date, s_table, cur_t):
     print(dfs.head())
     if len(dfs) > 0:
         change = f'c_{cur_t}'
-        if cur_t == '0930':
-            df.drop(['open_x'], axis=1, inplace=True)
-        else:
-            dfs.drop(['open_x'], axis=1, inplace=True)
         new_df = pd.merge(df, dfs, how='inner', left_on=['code'], right_on=['code'])
         if len(new_df) == 0:
             return
@@ -147,4 +143,4 @@ if __name__ == '__main__':
         if dd.hour == 10:
             cur_t = '0930'
         if cur_t in t_list:
-            main(last_date, s_table, cur_t)
+            main(last_d, s_table, cur_t)

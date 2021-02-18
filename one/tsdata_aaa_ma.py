@@ -139,5 +139,5 @@ if __name__ == '__main__':
     conn = engine.connect()
     trans = conn.begin()
     s_table = 'tsdata'
-    main(last_date, s_table)
+    main(last_d, s_table)
 
