@@ -86,7 +86,7 @@ def send_tg(text, chat_id):
 
 
 def main(date, s_table, cur_t):
-    sql = f"select * from {s_table} where create_date = '{date}'"
+    sql = f"select * from {s_table} where trade_date = '{date}'"
     df = pd.read_sql_query(sql, con=engine)
     print(df.head())
     df.drop(['ogc'], axis=1, inplace=True)
@@ -109,13 +109,13 @@ def main(date, s_table, cur_t):
         except:
             new_df[change] = 0
         new_df['ogc'] = (new_df['open_x'] - new_df['close']) / new_df['close'] * 100
-        df_a = new_df.sort_values(by=['ogc'], ascending=True).set_index('create_date').round({change: 2, 'ogc': 2})
+        df_a = new_df.sort_values(by=['ogc'], ascending=True).set_index('trade_date').round({change: 2, 'ogc': 2})
         df_a.drop(['now'], axis=1, inplace=True)
 
         print(df_a.head())
 
         try:
-            conn.execute(f"delete from {s_table} where create_date = '{date}' and code in {tuple(df_a['code'].to_list())}")
+            conn.execute(f"delete from {s_table} where trade_date = '{date}' and code in {tuple(df_a['code'].to_list())}")
             trans.commit()
             df_a.to_sql(s_table, engine, if_exists='append', index=True)
         except:
@@ -124,16 +124,18 @@ def main(date, s_table, cur_t):
 
         if cur_t == '0930':
             columns = ['code', 'name', 'return', 'open', 'ogc', change]
-            df_b = new_df.loc[
-                (new_df['ogc'] < 8) &
-                (new_df['ogc'] < 6) &
-                (new_df[change] < 3)
-                , columns].sort_values(by=['ogc'], ascending=True)
-            if len(df_b) > 0:
-                last_df = df_b[:5].to_string(header=None)
-                chat_id = "@hollystock"
-                text = '%s 低开大于-6小于-8\n' % date + last_df
-                send_tg(text, chat_id)
+            # df_b = new_df.loc[
+            #     (new_df['ogc'] < 8) &
+            #     (new_df['ogc'] < 6) &
+            #     (new_df[change] < 3)
+            #     , columns].sort_values(by=['ogc'], ascending=True)
+            # if len(df_b) > 0:
+            #     last_df = df_b[:5].to_string(header=None)
+            #     print(last_df)
+
+            #     chat_id = "@hollystock"
+            #     text = '%s 低开大于-6小于-8\n' % date + last_df
+            #     send_tg(text, chat_id)
 
             df_b = new_df.loc[
                 (new_df[change] > 0.95) &
@@ -143,6 +145,7 @@ def main(date, s_table, cur_t):
                 , columns].sort_values(by=['return'], ascending=False)
             if len(df_b) > 0:
                 last_df = df_b[:5].to_string(header=None)
+                print(last_df)
                 chat_id = "@hollystock"
                 text = '%s 涨幅小于1大于0.95，高开小于1\n' % date + last_df
                 send_tg(text, chat_id)
@@ -172,7 +175,7 @@ if __name__ == '__main__':
         engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
         conn = engine.connect()
         trans = conn.begin()
-        s_table = f'zjlx'
+        s_table = f'tsdata'
         t_list_am = [datetime.strftime(x, t_format) for x in
                      pd.date_range(f'{cur_date} 09:30', f'{cur_date} 11:30', freq='30min')]
         t_list_pm = [datetime.strftime(x, t_format) for x in
@@ -181,7 +184,7 @@ if __name__ == '__main__':
         if dd.hour > 15:
             cur_t = '1630'
             t_list.append(cur_t)
-        if dd.hour == 10:
+        if dd.hour == 9:
             cur_t = '0930'
         if cur_t in t_list:
-            main(last_date, s_table, cur_t)
+            main(last_d, s_table, cur_t)
