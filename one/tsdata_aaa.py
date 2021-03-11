@@ -49,7 +49,7 @@ if __name__ == '__main__':
     d_format = '%Y%m%d'
     t_format = '%H%M'
     # 获得当天
-    dt = '2021-02-19'
+    dt = '2021-03-10'
     dd = datetime.strptime(dt, date_format)
     dd = datetime.now()
     cur_date = dd.strftime(date_format)
