@@ -211,7 +211,7 @@ def main(date, s_table, cur_t):
                 last_df = df_b[:5].to_string(header=None)
                 chat_id = "@hollystock"
                 text = '%s 低开大于-6小于-8\n' % date + last_df
-                send_tg(text, chat_id)
+                # send_tg(text, chat_id)
 
             df_b = new_df.loc[
                 (new_df[change] > 0.95) &
@@ -223,7 +223,7 @@ def main(date, s_table, cur_t):
                 last_df = df_b[:5].to_string(header=None)
                 chat_id = "@hollystock"
                 text = '%s 涨幅小于1大于0.95，高开小于1\n' % date + last_df
-                send_tg(text, chat_id)
+                # send_tg(text, chat_id)
 
 
 if __name__ == '__main__':

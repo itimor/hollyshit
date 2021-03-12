@@ -99,7 +99,7 @@ def main(date, s_table, cur_t):
                 print(last_df)
                 chat_id = "@hollystock"
                 text = '%s 涨幅小于1大于0.95，高开小于1\n' % date + last_df
-                send_tg(text, chat_id)
+                # send_tg(text, chat_id)
 
 
 if __name__ == '__main__':

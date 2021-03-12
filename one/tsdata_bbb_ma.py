@@ -8,8 +8,8 @@ from telegram import Bot, ParseMode
 import pandas as pd
 import tushare as ts
 
-
 day_list = [3, 5, 10, 20]
+
 
 def get_stocks(codes):
     data = {
@@ -106,10 +106,11 @@ def main(date, s_table):
     df_b = new_df_sort[columns].sort_values(by=['s'], ascending=False)
     if len(df_b) > 0:
         last_df = df_b[:10].to_string(header=None)
+        print(last_df)
         chat_id = "@hollystock"
         text = '%s 开服小于1.02, ma排序从大到小\n' % date + last_df
-        send_tg(text, chat_id)
-    df_b.to_sql('ma', con=engine, index=True, if_exists='append')
+        # send_tg(text, chat_id)
+    # df_b.to_sql('ma', con=engine, index=True, if_exists='append')
 
 
 if __name__ == '__main__':
@@ -129,7 +130,7 @@ if __name__ == '__main__':
     # ts初始化
     ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
     df_ts = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),
-                           end_date=end_date.strftime(d_format), is_open='1')
+                              end_date=end_date.strftime(d_format), is_open='1')
     last_d = df_ts.tail(1)['cal_date'].to_list()[0]
     cur_date = datetime.strptime(last_d, d_format)
     last_date = cur_date.strftime(date_format)
@@ -140,4 +141,3 @@ if __name__ == '__main__':
     trans = conn.begin()
     s_table = 'zjlx'
     main(last_date, s_table)
-

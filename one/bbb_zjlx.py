@@ -90,7 +90,6 @@ if __name__ == '__main__':
         # ts初始化
         ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
         df = ts_data.trade_cal(exchange='', start_date=cur_d, end_date=cur_d, is_open='1')
-        print(df)
         if len(df) > 0:
             # 创建连接引擎
             engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
