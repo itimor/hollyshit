@@ -19,38 +19,34 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', 1000)
 
 
-def get_stock_name():
-    df = ts_data.namechange(ts_code='', fields='ts_code,name')
-    df.drop_duplicates(subset=['ts_code'], keep='first', inplace=True)
-    return df
-
-
-def main(date):
-    ma_list = [6, 11, 23, 33, 43, 53]
+def main(date, typ):
+    ma_list = [5, 10, 20, 30, 40, 50, 60]
     sql = f"select * from {s_table} where trade_date = '{date}'"
     df = pd.read_sql_query(sql, con=engine)
     code_list = df['ts_code'].to_list()
-    # code_list = ['600792.SH']
+    # code_list = ['002967.SZ', '002966.SZ']
     last_df = pd.DataFrame()
     for ts_code in code_list:
         print(ts_code)
-        sql = f"select * from {s_table} where ts_code = '{ts_code}' and trade_date <= '{date}' order by trade_date asc"
+        sql = f"select * from {s_table} where ts_code = '{ts_code}' and trade_date >= '{trade_days[0]}' and trade_date <= '{trade_days[59]}' order by trade_date asc"
         df_code = pd.read_sql_query(sql, con=engine)
-        for ma_len in ma_list:
-            df_code['ma' + str(ma_len)] = df_code['close'].rolling(ma_len).mean()
-        df_c = df_code.loc[df_code['trade_date'] == date]
+        for ma in ma_list:
+            df_code['ma' + str(ma)] = df_code['close'].rolling(ma).mean()
+        if typ == 'today':
+            df_c = df_code.loc[df_code['trade_date'] == date]
+        else:
+            df_c = df_code
+        prices = df_code['close'].map(np.float)
+        macd, signal, hist = talib.MACD(np.array(prices), 12, 26, 9)  # 计算macd各个指标
+        df_code['hist'] = hist  # macd所在区域
         last_df = pd.concat([df_c, last_df])
+    round_dict = {}
+    for ma in ma_list:
+        round_dict['ma' + str(ma)] = 2
+    round_dict['hist'] = 2
+    last_df = last_df.reset_index(drop=True).round(round_dict)
     print(last_df.head())
-    prices = df['close'].map(np.float)
-    macd, signal, hist = talib.MACD(np.array(prices), 12, 26, 9)  # 计算macd各个指标
-    last_df['hist'] = hist  # macd所在区域
-    try:
-        conn.execute(f"delete from {s_table} where trade_date = '{date}' and ts_code in {tuple(code_list)}")
-        trans.commit()
-        last_df.to_sql(s_table, engine, if_exists='append', index=True)
-    except:
-        trans.rollback()
-        raise
+    last_df.to_sql('ccc_ma', engine, if_exists='append', index=False)
 
 
 if __name__ == '__main__':
@@ -60,7 +56,7 @@ if __name__ == '__main__':
     t_format = '%H%M'
     # 获得当天
     dd = datetime.now()
-    start_date = dd - timedelta(days=10)
+    start_date = dd - timedelta(days=100)
     end_date = dd - timedelta(days=1)
     cur_date = dd.strftime(date_format)
     cur_d = dd.strftime(d_format)
@@ -70,11 +66,12 @@ if __name__ == '__main__':
     ts.set_token('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
     ts_data = ts.pro_api()
     df_ts = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),
-                              end_date=end_date.strftime(d_format), is_open='1')
-    last_d = df_ts.tail(1)['cal_date'].to_list()[0]
+                              end_date=dd.strftime(d_format), is_open='1')
+    trade_days = df_ts.tail(60)['cal_date'].to_list()
     # 创建连接引擎
     engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
     conn = engine.connect()
     trans = conn.begin()
     s_table = 'tsdata'
-    main(last_d)
+    typ = 'today'  # all|today
+    main(trade_days[59], typ)
