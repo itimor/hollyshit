@@ -47,7 +47,7 @@ def handle(df):
 
 
 def main(date):
-    sql = f"select * from {s_table} where ts_code = '{ts_code}' and trade_date >= '{trade_days[0]}' and trade_date <= '{trade_days[59]}' order by trade_date asc"
+    sql = f"select * from {s_table} where trade_date >= '{trade_days[0]}' and trade_date <= '{trade_days[59]}' order by trade_date asc"
     df = pd.read_sql_query(sql, con=engine)
     managed_df = df.groupby('ts_code').apply(handle).reset_index()
     result_buy = managed_df[
@@ -86,7 +86,7 @@ if __name__ == '__main__':
     t_format = '%H%M'
     # 获得当天
     dd = datetime.now()
-    start_date = dd - timedelta(days=10)
+    start_date = dd - timedelta(days=100)
     end_date = dd - timedelta(days=1)
     cur_date = dd.strftime(date_format)
     cur_d = dd.strftime(d_format)

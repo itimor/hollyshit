@@ -38,7 +38,7 @@ def main(date, typ):
             df_c = df_code
         prices = df_code['close'].map(np.float)
         macd, signal, hist = talib.MACD(np.array(prices), 12, 26, 9)  # 计算macd各个指标
-        df_code['hist'] = hist  # macd所在区域
+        df_c['hist'] = hist  # macd所在区域
         last_df = pd.concat([df_c, last_df])
     round_dict = {}
     for ma in ma_list:
@@ -73,5 +73,5 @@ if __name__ == '__main__':
     conn = engine.connect()
     trans = conn.begin()
     s_table = 'tsdata'
-    typ = 'today'  # all|today
+    typ = 'all'  # all|today
     main(trade_days[59], typ)
