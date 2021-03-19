@@ -25,6 +25,8 @@ def main(start_date, end_date):
     stock_df = stock_rs.get_data()
     data_df = pd.DataFrame()
     for code in stock_df["code"]:
+        if code[3:6] in ['688', '200', '900', '300']:
+            continue
         print(code)
         k_rs = bs.query_history_k_data_plus(code,
                                             "date,code,open,high,low,close,preclose,volume,amount,turn,pctChg,isST",
