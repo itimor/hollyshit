@@ -19,7 +19,7 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', 1000)
 
 
-def main(date, typ):
+def main(date):
     ma_list = [5, 10, 20, 30, 40, 50, 60]
     sql = f"select * from {s_table} where trade_date = '{date}'"
     df = pd.read_sql_query(sql, con=engine)
@@ -32,21 +32,17 @@ def main(date, typ):
         df_code = pd.read_sql_query(sql, con=engine)
         for ma in ma_list:
             df_code['ma' + str(ma)] = df_code['close'].rolling(ma).mean()
-        if typ == 'today':
-            df_c = df_code.loc[df_code['trade_date'] == date]
-        else:
-            df_c = df_code
         prices = df_code['close'].map(np.float)
         macd, signal, hist = talib.MACD(np.array(prices), 12, 26, 9)  # 计算macd各个指标
-        df_c['hist'] = hist  # macd所在区域
-        last_df = pd.concat([df_c, last_df])
+        df_code['hist'] = hist  # macd所在区域
+        last_df = pd.concat([df_code, last_df])
     round_dict = {}
     for ma in ma_list:
         round_dict['ma' + str(ma)] = 2
     round_dict['hist'] = 2
     last_df = last_df.reset_index(drop=True).round(round_dict)
     print(last_df.head())
-    last_df.to_sql('ccc_ma', engine, if_exists='append', index=False)
+    last_df.to_sql('ccc_ma', engine, if_exists='replace', index=False)
 
 
 if __name__ == '__main__':
@@ -56,7 +52,7 @@ if __name__ == '__main__':
     t_format = '%H%M'
     # 获得当天
     dd = datetime.now()
-    start_date = dd - timedelta(days=100)
+    start_date = dd - timedelta(days=120)
     end_date = dd - timedelta(days=1)
     cur_date = dd.strftime(date_format)
     cur_d = dd.strftime(d_format)
@@ -73,5 +69,4 @@ if __name__ == '__main__':
     conn = engine.connect()
     trans = conn.begin()
     s_table = 'tsdata'
-    typ = 'all'  # all|today
-    main(trade_days[59], typ)
+    main(trade_days[59])

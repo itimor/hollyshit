@@ -41,7 +41,7 @@ def handle(df):
     return df
 
 
-def main(date):
+def main():
     sql = f"select * from {s_table} where trade_date >= '{trade_days[0]}' and trade_date <= '{trade_days[59]}' order by trade_date asc"
     df = pd.read_sql_query(sql, con=engine)
     managed_df = df.groupby('ts_code').apply(handle).reset_index()
@@ -66,7 +66,7 @@ def main(date):
 
     for dt in stock_to_buy_dic.keys():
         print(dt)
-        b = stock_to_buy_dic[dt]
+        b = [i.split('.')[0] for i in stock_to_buy_dic[dt]]
         print(b)
 
 
@@ -94,4 +94,4 @@ if __name__ == '__main__':
     conn = engine.connect()
     trans = conn.begin()
     s_table = 'ccc_ma'
-    main(trade_days[59])
+    main()

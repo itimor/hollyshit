@@ -39,32 +39,31 @@ def handle(df):
     return df
 
 
-def main(date):
+def main():
     sql = f"select * from {s_table} where trade_date >= '{trade_days[0]}' and trade_date <= '{trade_days[59]}' order by trade_date asc"
     df = pd.read_sql_query(sql, con=engine)
     managed_df = df.groupby('ts_code').apply(handle).reset_index()
     result_buy = managed_df[
-        # (managed_df['ma_10_slop_10'] > 0.01) &
-        # (managed_df['ma_10_slop_10'] < 0.08) &
+        (managed_df['ma_10_slop_10'] > 0.01) &
+        (managed_df['ma_10_slop_10'] < 0.08) &
         (managed_df['ma_5_10'] > 0) &
         (managed_df['ma_10_20'] > 0) &
-        (managed_df['ma_20_60'] > 0) &
-        (managed_df['ma_5_60'] > 0) &
-        (managed_df['close_5'] > 0.1) &
-        (managed_df['close_5'] < 0.23) &
+        # (managed_df['ma_20_60'] > 0) &
+        # (managed_df['ma_5_60'] > 0) &
+        # (managed_df['close_5'] > 0.1) &
+        # (managed_df['close_5'] < 0.23) &
         (managed_df['close'] > 5) &
         (managed_df['close'] < 30) &
-        (managed_df['is_highest']) &
-        (managed_df['hist'] > 0)
+        # (managed_df['is_highest']) &
+        (managed_df['hist'] > -2)
         ]
-
     stock_to_buy = result_buy.groupby('trade_date').apply(lambda df: list(df.ts_code)).reset_index().rename(
         columns={0: 'stocks'})
     stock_to_buy_dic = stock_to_buy.set_index('trade_date').to_dict()['stocks']
 
     for dt in stock_to_buy_dic.keys():
         print(dt)
-        b = stock_to_buy_dic[dt]
+        b = [i.split('.')[0] for i in stock_to_buy_dic[dt]]
         print(b)
 
 
@@ -80,7 +79,6 @@ if __name__ == '__main__':
     cur_date = dd.strftime(date_format)
     cur_d = dd.strftime(d_format)
     cur_t = dd.strftime(t_format)
-    cur_t = dd.strftime(t_format)
     print(f'今天日期 {cur_d}')
     # ts初始化
     ts.set_token('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
@@ -93,4 +91,4 @@ if __name__ == '__main__':
     conn = engine.connect()
     trans = conn.begin()
     s_table = 'ccc_ma'
-    main(trade_days[59])
+    main()

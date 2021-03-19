@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # author: itimor
-# 东方财富资金流向，并根据策略筛选股票
+# 连涨后回调，优先选择换手率高的 > 19%
 
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
@@ -18,55 +18,39 @@ pd.set_option('display.max_colwidth', 1000)
 
 
 def handle(df):
-    ma_list = [5, 10, 20, 30, 40, 50, 60]
-    for ma_len in ma_list:
-        # 日涨幅
-        day = 5
-        df['ma_' + str(ma_len) + '_slop_' + str(day)] = (df['ma' + str(ma_len)] - df['ma' + str(ma_len)].shift(day)) / \
-                                                        df['ma' + str(ma_len)].shift(day)
-        day = 10
-        df['ma_' + str(ma_len) + '_slop_' + str(day)] = (df['ma' + str(ma_len)] - df['ma' + str(ma_len)].shift(day)) / \
-                                                        df['ma' + str(ma_len)].shift(day)
-    df['highest_10'] = df['close'].rolling(20).max()  # 约定时间内的最高点
-    df['is_highest_10'] = df['close'].shift(19) == df['highest_10']  # 当日收盘时约定时间内最高点
-    df['highest_3'] = df['close'].rolling(5).min()  # 约定时间内的最高点
-    df['is_highest_3'] = df['close'].shift(2) == df['highest_3']  # 当日收盘时约定时间内最高点
+    df['highest_10'] = df['high'].rolling(3).max()  # 约定时间内的最高点
+    df['is_highest'] = df['close'] == df['highest_10']  # 当日收盘时约定时间内最高点
     df['ma_5_10'] = df['ma5'] - df['ma10']
-    df['ma_5_60'] = df['ma5'] - df['ma60']
     df['ma_10_20'] = df['ma10'] - df['ma20']
+    df['ma_5_60'] = df['ma5'] - df['ma60']
     df['ma_10_60'] = df['ma10'] - df['ma60']
-    df['change_1'] = df['change'].shift(1)
+    df['ma_20_60'] = df['ma20'] - df['ma60']
 
-    df['up_line'] = (df['high'] - df['open']) / (df['close'] - df['open'])
-    df['down_line'] = (df['close'] - df['low']) / (df['close'] - df['open'])
-
-    # 5天涨幅
-    df['return_3'] = df['pct_chg'].rolling(3).sum()
+    # n天涨幅
+    df['return_0'] = df['pct_chg']
+    df['return_1'] = df['pct_chg'].shift(1)
+    df['return_2'] = df['pct_chg'].shift(2)
+    df['return_3'] = df['pct_chg'].shift(2)
     df['return_5'] = df['pct_chg'].rolling(5).sum()
     return df
 
 
-def main(date):
+def main():
     sql = f"select * from {s_table} where trade_date >= '{trade_days[0]}' and trade_date <= '{trade_days[59]}' order by trade_date asc"
     df = pd.read_sql_query(sql, con=engine)
     managed_df = df.groupby('ts_code').apply(handle).reset_index()
     result_buy = managed_df[
-        (managed_df['ma_5_slop_5'] > 0.02) &
-        # (managed_df['ma_5_slop_5'] < 0.07) &
         (managed_df['ma_5_10'] > 0) &
-        (managed_df['ma_10_60'] > 0) &
-        (managed_df['change'] > 0) &
-        # (managed_df['close_5'] > 0.1) &
-        # (managed_df['close_5'] < 0.23) &
-        ((managed_df['up_line'] < 0.3) | (managed_df['down_line'] < 0.3)) &
+        # (managed_df['ma_10_20'] > 0) &
         # (managed_df['up_line'] < 0.8) &
         # (managed_df['down_line'] < 0.8)&
-        (managed_df['return_5'] > 18) &
-        (managed_df['close'] > 5) &
+        (managed_df['return_0'] > 3) &
+        (managed_df['return_1'] > 3) &
+        (managed_df['return_2'] < 2) &
+        (managed_df['return_3'] < 0) &
+        (managed_df['close'] > 2) &
         (managed_df['close'] < 80) &
-        # (managed_df['is_highest_3']) &
-        # (managed_df['is_highest_10']) &
-        (managed_df['hist'] > 0)
+        (managed_df['hist'] > -2)
         ]
 
     stock_to_buy = result_buy.groupby('trade_date').apply(lambda df: list(df.ts_code)).reset_index().rename(
@@ -75,7 +59,7 @@ def main(date):
 
     for dt in stock_to_buy_dic.keys():
         print(dt)
-        b = stock_to_buy_dic[dt]
+        b = [i.split('.')[0] for i in stock_to_buy_dic[dt]]
         print(b)
 
 
@@ -103,4 +87,4 @@ if __name__ == '__main__':
     conn = engine.connect()
     trans = conn.begin()
     s_table = 'ccc_ma'
-    main(trade_days[59])
+    main()
