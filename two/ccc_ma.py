@@ -28,7 +28,7 @@ def main(date):
     last_df = pd.DataFrame()
     for ts_code in code_list:
         print(ts_code)
-        sql = f"select * from {s_table} where ts_code = '{ts_code}' and trade_date >= '{trade_days[0]}' and trade_date <= '{trade_days[59]}' order by trade_date asc"
+        sql = f"select * from {s_table} where ts_code = '{ts_code}' and trade_date >= '{trade_days[0]}' order by trade_date asc"
         df_code = pd.read_sql_query(sql, con=engine)
         for ma in ma_list:
             df_code['ma' + str(ma)] = df_code['close'].rolling(ma).mean()
