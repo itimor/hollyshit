@@ -53,7 +53,7 @@ def handle(df):
 
 
 def main():
-    sql = f"select * from {s_table} where isST=0 and date > '2021-03-10' and turn > 10 order by turn desc"
+    sql = f"select * from {s_table} where date > '2021-03-10' and turn > 10 order by turn desc"
     date_df = pd.read_sql_query(sql, con=engine)
     managed_df = date_df.groupby('code').apply(handle).reset_index()
     result_buy = managed_df[
@@ -62,8 +62,7 @@ def main():
         (managed_df['close'] > 3) &
         (managed_df['close'] < 50) &
         (managed_df['hist'] > -1)]
-    stock_to_buy = result_buy.groupby('date').apply(lambda df: list(df.code)).reset_index().rename(
-        columns={0: 'stocks'})
+    stock_to_buy = result_buy.groupby('date').apply(lambda df: list(df.code)).reset_index().rename(columns={0: 'stocks'})
     stock_to_buy_dic = stock_to_buy.set_index('date').to_dict()['stocks']
 
     for dt in stock_to_buy_dic.keys():

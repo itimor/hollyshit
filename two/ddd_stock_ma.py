@@ -7,7 +7,6 @@ from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
 import tushare as ts
-import baostock as bs
 
 import talib
 import os
@@ -34,7 +33,7 @@ def main(start_date, end_date):
         if code[:6] in ['sh.688', 'sz.200', 'sz.300', 'sz.400', 'sz.900', 'sz.399', 'sh.000']:
             continue
         print(code)
-        sql = f"select * from {s_table} where code='{code}' and date >= '{start_date}' order by date desc"
+        sql = f"select * from {s_table} where code='{code}' and date >= '{start_date}' order by date asc"
         df_code = pd.read_sql_query(sql, con=engine)
         macd, signal, hist = talib.MACD(np.array(df_code['close']), 12, 26, 9)  # 计算macd各个指标
         df_code['hist'] = hist  # macd所在区域
@@ -75,13 +74,9 @@ if __name__ == '__main__':
     conn = engine.connect()
     trans = conn.begin()
     s_table = 'stock'
-    #### 登陆系统 ####
-    lg = bs.login()
     s_date = datetime.strptime(trade_days[0], d_format)
     e_date = datetime.strptime(trade_days[-1], d_format)
     main(s_date.strftime(date_format), e_date.strftime(date_format))
-    #### 登出系统 ####
-    bs.logout()
     end_time = datetime.now()
     spent_time = int((end_time - dd).seconds / 60)
     print(f'spent time {spent_time} min')
