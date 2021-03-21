@@ -52,6 +52,19 @@ def handle(df):
     return df
 
 
+def sort_stock(x, stock_to_buy_dic):
+    dt = x
+    st = tuple(stock_to_buy_dic[x])
+    sql = f"select * from {s_table} where date = '{dt}' and code in {st}"
+    date_df = pd.read_sql_query(sql, con=engine)
+    tmp = date_df[['code', 'turn', 'hist', 'close', 'ma5', 'code_name']].copy()
+    # 按照换手率降序排序、市值升序排序、每股收益降序排序
+    tmp.sort_values(by=['turn', 'hist'], ascending=[0, 1], inplace=True)
+    print(dt.split()[0])
+    print(tmp)
+    return tmp
+
+
 def main():
     sql = f"select * from {s_table} where date > '{s_date}' and turn > 10 order by turn desc"
     date_df = pd.read_sql_query(sql, con=engine)
@@ -59,16 +72,17 @@ def main():
     result_buy = managed_df[
         (managed_df['turn'] > 15) &
         (managed_df['up_line'] > -1) &
-        (managed_df['close'] > 3) &
+        (managed_df['return_0'] > -1) &
+        (managed_df['close'] > 2) &
         (managed_df['close'] < 50) &
         (managed_df['hist'] > -1)]
-    stock_to_buy = result_buy.groupby('date').apply(lambda df: list(df.code)).reset_index().rename(columns={0: 'stocks'})
+    stock_to_buy = result_buy.groupby('date').apply(lambda df: list(df.code)).reset_index().rename(
+        columns={0: 'stocks'})
     stock_to_buy_dic = stock_to_buy.set_index('date').to_dict()['stocks']
 
-    for dt in stock_to_buy_dic.keys():
-        print(dt.split()[0])
-        b = [i.split('.')[1] for i in stock_to_buy_dic[dt]]
-        print(b)
+    # 选出来的股票还需进行排序
+    for i in stock_to_buy_dic.keys():
+        sort_stock(i, stock_to_buy_dic)
 
 
 if __name__ == '__main__':
