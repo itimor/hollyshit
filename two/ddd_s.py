@@ -53,7 +53,7 @@ def handle(df):
 
 
 def main():
-    sql = f"select * from {s_table} where date > '2021-03-10' and turn > 10 order by turn desc"
+    sql = f"select * from {s_table} where date > '{s_date}' and turn > 10 order by turn desc"
     date_df = pd.read_sql_query(sql, con=engine)
     managed_df = date_df.groupby('code').apply(handle).reset_index()
     result_buy = managed_df[
@@ -73,6 +73,13 @@ def main():
 
 if __name__ == '__main__':
     db = 'ddd'
+    date_format = '%Y-%m-%d'
+    d_format = '%Y%m%d'
+    t_format = '%H%M'
+    # 获得当天
+    dd = datetime.now()
+    start_date = dd - timedelta(days=10)
+    s_date = start_date.strftime(date_format)
     engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
     conn = engine.connect()
     trans = conn.begin()
