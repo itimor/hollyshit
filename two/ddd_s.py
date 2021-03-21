@@ -57,7 +57,7 @@ def sort_stock(x, stock_to_buy_dic):
     st = tuple(stock_to_buy_dic[x])
     sql = f"select * from {s_table} where date = '{dt}' and code in {st}"
     date_df = pd.read_sql_query(sql, con=engine)
-    tmp = date_df[['code', 'turn', 'hist', 'close', 'ma5', 'code_name']].copy()
+    tmp = date_df[['code', 'turn', 'hist', 'pctChg', 'code_name']].copy()
     # 按照换手率降序排序、市值升序排序、每股收益降序排序
     tmp.sort_values(by=['turn', 'hist'], ascending=[0, 1], inplace=True)
     print(dt.split()[0])
