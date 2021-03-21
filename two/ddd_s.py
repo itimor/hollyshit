@@ -58,7 +58,7 @@ def main():
     managed_df = date_df.groupby('code').apply(handle).reset_index()
     result_buy = managed_df[
         (managed_df['turn'] > 15) &
-        (managed_df['up_line'] < 2) &
+        (managed_df['up_line'] > -1) &
         (managed_df['close'] > 3) &
         (managed_df['close'] < 50) &
         (managed_df['hist'] > -1)]
@@ -77,5 +77,5 @@ if __name__ == '__main__':
     engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
     conn = engine.connect()
     trans = conn.begin()
-    s_table = 'stock'
+    s_table = 'stock_ma'
     main()

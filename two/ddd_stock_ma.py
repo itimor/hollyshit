@@ -22,17 +22,19 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', 1000)
 
 
-def main(date):
-    stock_rs = bs.query_all_stock(date)
-    stock_df = stock_rs.get_data()
+def main(start_date, end_date):
+    sql = f"select * from {s_table} where date = '{end_date} 00:00:00.000000' and isST=0"
+    code_list = pd.read_sql_query(sql, con=engine)
     data_df = pd.DataFrame()
     ma_list = [5, 10, 20, 30, 40, 50, 60]
     n = 0
-    for code in stock_df["code"]:
+    for code in code_list["code"]:
         n += 1
         print(n)
+        if code[:6] in ['sh.688', 'sz.200', 'sz.300', 'sz.400', 'sz.900', 'sz.399', 'sh.000']:
+            continue
         print(code)
-        sql = f"select * from {s_table} where isST=0 and code={code} and date >= '{trade_days[0]}' order by date desc"
+        sql = f"select * from {s_table} where code='{code}' and date >= '{start_date}' order by date desc"
         df_code = pd.read_sql_query(sql, con=engine)
         macd, signal, hist = talib.MACD(np.array(df_code['close']), 12, 26, 9)  # 计算macd各个指标
         df_code['hist'] = hist  # macd所在区域
@@ -44,7 +46,7 @@ def main(date):
         round_dict['ma' + str(ma)] = 2
     round_dict['hist'] = 2
     last_df = data_df.reset_index(drop=True).round(round_dict)
-    last_df.to_sql(s_table, engine, if_exists='replace', index=False)
+    last_df.to_sql('stock_ma', engine, if_exists='replace', index=False)
 
 
 if __name__ == '__main__':
@@ -75,7 +77,9 @@ if __name__ == '__main__':
     s_table = 'stock'
     #### 登陆系统 ####
     lg = bs.login()
-    main(trade_days[59])
+    s_date = datetime.strptime(trade_days[0], d_format)
+    e_date = datetime.strptime(trade_days[-1], d_format)
+    main(s_date.strftime(date_format), e_date.strftime(date_format))
     #### 登出系统 ####
     bs.logout()
     end_time = datetime.now()
