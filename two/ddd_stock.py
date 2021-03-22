@@ -49,10 +49,10 @@ def main(start_date, end_date):
     df_merge = pd.merge(data_df, stock_df, how='inner', left_on=['code'], right_on=['code'])
     last_df = df_merge.loc[df_merge.close < 80].reset_index(drop=True).round(round_dict)
     print(last_df.head())
-    # if typ == 'today':
-    #     last_df.to_sql(s_table, engine, if_exists='append', index=False)
-    # else:
-    #     last_df.to_sql(s_table, engine, if_exists='replace', index=False)
+    if typ == 'today':
+        last_df.to_sql(s_table, engine, if_exists='append', index=False)
+    else:
+        last_df.to_sql(s_table, engine, if_exists='replace', index=False)
 
 
 if __name__ == '__main__':

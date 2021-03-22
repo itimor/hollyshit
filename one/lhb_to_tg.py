@@ -3,7 +3,6 @@
 # 东方财富龙虎榜,并根据策略筛选股票，并发送到tg频道
 
 from datetime import datetime, timedelta
-from telegram import Bot, ParseMode
 from fake_useragent import UserAgent
 import pandas as pd
 import numpy as np
@@ -79,14 +78,6 @@ def get_lhb_stocks(begin_date, end_date):
     return dfs
 
 
-def send_tg(date, msg, chat_id):
-    token = '723532221:AAH8SSfM7SfTe4HmhV72QdLbOUW3akphUL8'
-    bot = Bot(token=token)
-    chat_id = chat_id
-    text = '<a href="http://data.eastmoney.com/stock/tradedetail/%s.html">%s龙虎榜</a>\n' % (date, date) + msg
-    bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
-
-
 def main(begin_date, end_date, tactics='df1'):
     dfs = get_lhb_stocks(begin_date, end_date)
     timeline = np.unique(dfs['Date'])
@@ -113,9 +104,7 @@ def main(begin_date, end_date, tactics='df1'):
         df[['Close']] = df[['Close']].astype(float)
         df['BuyCount'] = df['Buy'] / df['Close']
         last_df = df.round({'Buy': 2}).to_string(header=None)
-        # 发送tg
-        if len(last_df) > 0:
-            send_tg(date, last_df, chat_id)
+        print(last_df)
 
 
 if __name__ == '__main__':
