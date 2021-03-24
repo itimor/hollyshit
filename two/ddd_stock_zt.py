@@ -77,8 +77,8 @@ if __name__ == '__main__':
     s_table = 'stock'
     #### 登陆系统 ####
     lg = bs.login()
-    s_date = datetime.strptime(trade_days[-2], d_format)
-    e_date = datetime.strptime(trade_days[-2], d_format)
+    s_date = datetime.strptime(trade_days[-1], d_format)
+    e_date = datetime.strptime(trade_days[-1], d_format)
     main(s_date.strftime(date_format), e_date.strftime(date_format))
     #### 登出系统 ####
     bs.logout()
