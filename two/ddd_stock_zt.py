@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 import pandas as pd
 import numpy as np
 import tushare as ts
+import baostock as bs
 
 import talib
 import os
@@ -22,31 +23,30 @@ pd.set_option('display.max_colwidth', 1000)
 
 
 def main(start_date, end_date):
-    sql = f"select * from {s_table} where date = '{end_date} 00:00:00.000000' and isST=0"
-    code_list = pd.read_sql_query(sql, con=engine)
-    data_df = pd.DataFrame()
-    ma_list = [5, 10, 20, 30, 40, 50, 60]
-    n = 0
-    for code in code_list["code"]:
-        n += 1
-        print(n)
-        if code[:6] in ['sh.688', 'sz.200', 'sz.300', 'sz.400', 'sz.900', 'sz.399', 'sh.000']:
-            continue
+    sql = f"select * from {s_table} where date == '{end_date} 00:00:00.000000' and isST=0 and pctChg>9.7 order by date asc"
+    df_code = pd.read_sql_query(sql, con=engine)
+    columns = ['date', 'time', 'code', 'open', 'high', 'low', 'close']
+    # for code in ['sz.003039']:
+    a = []
+    for code in df_code['code']:
         print(code)
-        sql = f"select * from {s_table} where code='{code}' and date >= '{start_date}' order by date asc"
-        df_code = pd.read_sql_query(sql, con=engine)
-        macd, signal, hist = talib.MACD(np.array(df_code['close']), 12, 26, 9)  # 计算macd各个指标
-        df_code['hist'] = hist  # macd所在区域
-        for ma in ma_list:
-            df_code['ma' + str(ma)] = df_code['close'].rolling(ma).mean()
-        data_df = data_df.append(df_code)
-    round_dict = {}
-    for ma in ma_list:
-        round_dict['ma' + str(ma)] = 2
-    round_dict['hist'] = 2
-    last_df = data_df.reset_index(drop=True).round(round_dict)
+        df_code_close = df_code.loc[df_code.code == code]
+        k_rs = bs.query_history_k_data_plus(code, ','.join(columns), start_date, end_date,
+                                            frequency="5", adjustflag="3")
+        df_k = k_rs.get_data()
+        round_dict = {}
+        for column in columns[3:]:
+            round_dict[column] = 2
+        df_k[columns[3:]] = df_k[columns[3:]].apply(pd.to_numeric, errors='coerce').fillna(0.0)
+        df_k = df_k.reset_index(drop=True).round(round_dict)
+        df_k_all = df_k.loc[df_k['close'] == df_code_close['close'].to_list()[0]]
+        df_k_all = df_k_all.reset_index(drop=True)
+        df_code_close['time'] = df_k_all.loc[0]['time'][8:12]
+        a.append(df_code_close)
+    data_df = pd.concat(a, ignore_index=True)
+    last_df = data_df.sort_values(['time'], ascending=[1])
     print(last_df)
-    last_df.to_sql('stock_ma', engine, if_exists='replace', index=False)
+    last_df.to_sql('stock_zt', engine, if_exists='append', index=False)
 
 
 if __name__ == '__main__':
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     t_format = '%H%M'
     # 获得当天
     dd = datetime.now()
-    start_date = dd - timedelta(days=120)
+    start_date = dd - timedelta(days=7)
     end_date = dd - timedelta(days=1)
     cur_date = dd.strftime(date_format)
     cur_d = dd.strftime(d_format)
@@ -75,9 +75,13 @@ if __name__ == '__main__':
     conn = engine.connect()
     trans = conn.begin()
     s_table = 'stock'
-    s_date = datetime.strptime(trade_days[0], d_format)
-    e_date = datetime.strptime(trade_days[-1], d_format)
+    #### 登陆系统 ####
+    lg = bs.login()
+    s_date = datetime.strptime(trade_days[-2], d_format)
+    e_date = datetime.strptime(trade_days[-2], d_format)
     main(s_date.strftime(date_format), e_date.strftime(date_format))
+    #### 登出系统 ####
+    bs.logout()
     end_time = datetime.now()
     spent_time = int((end_time - dd).seconds / 60)
     print(f'spent time {spent_time} min')

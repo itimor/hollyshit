@@ -22,42 +22,41 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', 1000)
 
 
+# 判断是否为一字涨停的函数
+def judge_yizizhangting(df):
+    if (df['high'] - df['low']) / df['low'] * 100 < 2:
+        return True
+    else:
+        return False
+
+
 def handle(df):
-    ma_list = [5, 10, 20, 30, 40, 50, 60]
-    for ma_len in ma_list:
-        # 日涨幅
-        day = 5
-        df['ma_' + str(ma_len) + '_slop_' + str(day)] = (df['ma' + str(ma_len)] - df['ma' + str(ma_len)].shift(day)) / \
-                                                        df['ma' + str(ma_len)].shift(day)
-        day = 10
-        df['ma_' + str(ma_len) + '_slop_' + str(day)] = (df['ma' + str(ma_len)] - df['ma' + str(ma_len)].shift(day)) / \
-                                                        df['ma' + str(ma_len)].shift(day)
     df['highest_10'] = df['high'].rolling(57).max()  # 约定时间内的最高点
     df['is_highest'] = df['close'] == df['highest_10']  # 当日收盘时约定时间内最高点
-    df['ma_5_10'] = df['ma5'] - df['ma10']
-    df['ma_10_20'] = df['ma10'] - df['ma20']
-    df['ma_5_60'] = df['ma5'] - df['ma60']
-    df['ma_10_60'] = df['ma10'] - df['ma60']
-    df['ma_20_60'] = df['ma20'] - df['ma60']
 
     # n天涨幅
     df['return_0'] = df['pctChg']
-    df['return_1'] = df['pctChg'].shift(1)
     df['return_3'] = df['pctChg'].rolling(3).sum()
-    df['return_5'] = df['pctChg'].rolling(5).sum()
+    df['hl'] = (df['high'] - df['low'] + 0.0001) / df['low'] * 100
 
     # 上下影线
     df['color'] = df['close'] - df['open']
-    df['up_line'] = abs(df['high'] - df['close']) / (df['close'] - df['open'])
+    df['yizizhangting'] = df.apply(judge_yizizhangting, axis=1)
     return df
 
 
 def sort_stock(x, stock_to_buy_dic):
     dt = x
-    st = tuple(stock_to_buy_dic[x])
-    sql = f"select * from {s_table} where date = '{dt}' and code in {st}"
-    date_df = pd.read_sql_query(sql, con=engine)
-    tmp = date_df[['code', 'turn', 'hist', 'pctChg', 'code_name']].copy()
+    st = stock_to_buy_dic[x]
+    if len(st) == 1:
+        code_list = st[0]
+        sql = f"select * from {s_table} where date = '{dt}' and code = '{code_list}'"
+    else:
+        code_list = tuple(st)
+        sql = f"select * from {s_table} where date = '{dt}' and code in {code_list}"
+    df = pd.read_sql_query(sql, con=engine)
+    df['hl'] = (df['high'] - df['low'] + 0.0001) / df['low'] * 100
+    tmp = df[['code', 'turn', 'hist', 'pctChg', 'hl', 'code_name']].copy()
     # 按照换手率降序排序、市值升序排序、每股收益降序排序
     tmp.sort_values(by=['turn', 'hist'], ascending=[0, 1], inplace=True)
     print(dt.split()[0])
@@ -70,12 +69,11 @@ def main():
     date_df = pd.read_sql_query(sql, con=engine)
     managed_df = date_df.groupby('code').apply(handle).reset_index()
     result_buy = managed_df[
-        (managed_df['turn'] > 15) &
-        (managed_df['up_line'] > -1) &
-        (managed_df['return_0'] > -1) &
-        (managed_df['close'] > 2) &
+        (managed_df['pctChg'] > 9) &
+        (managed_df['hl'] < 8) &
         (managed_df['close'] < 50) &
-        (managed_df['hist'] > -1)]
+        (managed_df['close'] > 2)
+        ]
     stock_to_buy = result_buy.groupby('date').apply(lambda df: list(df.code)).reset_index().rename(
         columns={0: 'stocks'})
     stock_to_buy_dic = stock_to_buy.set_index('date').to_dict()['stocks']
