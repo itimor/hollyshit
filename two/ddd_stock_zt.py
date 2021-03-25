@@ -44,7 +44,7 @@ def main(start_date, end_date):
         df_code_close['time'] = df_k_all.loc[0]['time'][8:12]
         a.append(df_code_close)
     data_df = pd.concat(a, ignore_index=True)
-    last_df = data_df.sort_values(['time'], ascending=[1])
+    last_df = data_df.sort_values(['time', 'amount'], ascending=[1, 0])
     print(last_df)
     last_df.to_sql('stock_zt', engine, if_exists='append', index=False)
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     t_format = '%H%M'
     # 获得当天
     dd = datetime.now()
-    start_date = dd - timedelta(days=7)
+    start_date = dd - timedelta(days=20)
     end_date = dd - timedelta(days=1)
     cur_date = dd.strftime(date_format)
     cur_d = dd.strftime(d_format)

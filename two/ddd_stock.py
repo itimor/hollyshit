@@ -28,7 +28,7 @@ def main(start_date, end_date):
     data_df = pd.DataFrame()
     columns = ['date', 'code', 'open', 'high', 'low', 'close', 'preclose', 'volume', 'amount', 'turn', 'pctChg', 'isST']
     n = 0
-    # for code in stock_df["code"][:250]:
+    #for code in stock_df["code"][660:670]:
     for code in stock_df["code"]:
         n += 1
         print(n)
