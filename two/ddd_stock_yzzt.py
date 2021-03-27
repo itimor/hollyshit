@@ -22,14 +22,6 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_colwidth', 1000)
 
 
-# 判断是否为一字涨停的函数
-def judge_yizizhangting(df):
-    if (df['high'] - df['low']) / df['low'] * 100 < 2:
-        return True
-    else:
-        return False
-
-
 def handle(df):
     df['highest_10'] = df['high'].rolling(57).max()  # 约定时间内的最高点
     df['is_highest'] = df['close'] == df['highest_10']  # 当日收盘时约定时间内最高点
@@ -41,7 +33,6 @@ def handle(df):
 
     # 上下影线
     df['color'] = df['close'] - df['open']
-    df['yizizhangting'] = df.apply(judge_yizizhangting, axis=1)
     return df
 
 
@@ -70,7 +61,9 @@ def main():
     managed_df = date_df.groupby('code').apply(handle).reset_index()
     result_buy = managed_df[
         #(managed_df['turn'] > 7) &
-        (managed_df['yizizhangting']) &
+        (managed_df['open'] == managed_df['close']) &
+        (managed_df['close'] == managed_df['high']) &
+        (managed_df['high'] == managed_df['low']) &
         (managed_df['close'] > 2) &
         (managed_df['close'] < 50)
         ]

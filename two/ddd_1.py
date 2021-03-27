@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # author: itimor
-# 连涨后回调，优先选择换手率高的 > 19%
+# 抓取每天一字涨停股票
 
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
