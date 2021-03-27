@@ -42,7 +42,7 @@ def main(date):
     round_dict['hist'] = 2
     last_df = last_df.reset_index(drop=True).round(round_dict)
     print(last_df.head())
-    last_df.to_sql('ccc_ma', engine, if_exists='replace', index=False)
+    last_df.to_sql('stock_ma', engine, if_exists='replace', index=False)
 
 
 if __name__ == '__main__':
@@ -68,5 +68,5 @@ if __name__ == '__main__':
     engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
     conn = engine.connect()
     trans = conn.begin()
-    s_table = 'tsdata'
+    s_table = 'stock'
     main(trade_days[59])
