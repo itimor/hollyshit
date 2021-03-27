@@ -24,6 +24,7 @@ pd.set_option('display.max_colwidth', 1000)
 
 def main(start_date, end_date):
     sql = f"select * from {s_table} where date == '{end_date} 00:00:00.000000' and isST=0 and pctChg>9.7 order by date asc"
+    print(sql)
     df_code = pd.read_sql_query(sql, con=engine)
     columns = ['date', 'time', 'code', 'open', 'high', 'low', 'close']
     # for code in ['sz.003039']:
@@ -76,12 +77,16 @@ if __name__ == '__main__':
     trans = conn.begin()
     s_table = 'stock'
     #### 登陆系统 ####
-    lg = bs.login()
-    s_date = datetime.strptime(trade_days[-1], d_format)
-    e_date = datetime.strptime(trade_days[-1], d_format)
-    main(s_date.strftime(date_format), e_date.strftime(date_format))
-    #### 登出系统 ####
-    bs.logout()
+    try:
+        bs.login()
+        s_date = datetime.strptime(trade_days[-1], d_format)
+        e_date = datetime.strptime(trade_days[-1], d_format)
+        main(s_date.strftime(date_format), e_date.strftime(date_format))
+        #### 登出系统 ####
+        bs.logout()
+    except:
+        print("bs 登录失败")
+        raise SystemExit
     end_time = datetime.now()
     spent_time = int((end_time - dd).seconds / 60)
     print(f'spent time {spent_time} min')
