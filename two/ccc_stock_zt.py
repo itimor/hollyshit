@@ -5,11 +5,7 @@
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 import pandas as pd
-import numpy as np
 import tushare as ts
-import baostock as bs
-
-import talib
 import os
 
 # 设置最大列数，避免只显示部分列
@@ -24,7 +20,6 @@ pd.set_option('display.max_colwidth', 1000)
 
 def main(start_date, end_date):
     sql = f"select * from {s_table} where trade_date == '{start_date}' and pct_chg>9.7 order by trade_date asc"
-    print(sql)
     df_code = pd.read_sql_query(sql, con=engine)
     columns = ['date', 'time', 'open', 'high', 'close', 'low', 'volume', 'p_change', 'ma5', 'ma10', 'ma20', 'turnover']
     a = []
