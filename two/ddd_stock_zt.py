@@ -5,11 +5,8 @@
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 import pandas as pd
-import numpy as np
 import tushare as ts
 import baostock as bs
-
-import talib
 import os
 
 # 设置最大列数，避免只显示部分列
@@ -77,16 +74,12 @@ if __name__ == '__main__':
     trans = conn.begin()
     s_table = 'stock'
     #### 登陆系统 ####
-    try:
-        bs.login()
-        s_date = datetime.strptime(trade_days[-1], d_format)
-        e_date = datetime.strptime(trade_days[-1], d_format)
-        main(s_date.strftime(date_format), e_date.strftime(date_format))
-        #### 登出系统 ####
-        bs.logout()
-    except:
-        print("bs 登录失败")
-        raise SystemExit
+    bs.login()
+    s_date = datetime.strptime(trade_days[-1], d_format)
+    e_date = datetime.strptime(trade_days[-1], d_format)
+    main(s_date.strftime(date_format), e_date.strftime(date_format))
+    #### 登出系统 ####
+    bs.logout()
     end_time = datetime.now()
     spent_time = int((end_time - dd).seconds / 60)
     print(f'spent time {spent_time} min')
