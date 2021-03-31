@@ -3,17 +3,15 @@
 # 东方财富资金流向，并根据策略筛选股票
 
 from datetime import datetime, timedelta
-from telegram import Bot, ParseMode
 from fake_useragent import UserAgent
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 import pandas as pd
-import numpy as np
 import tushare as ts
 import requests
 import re
 import json
 import random
+from one.send_msg import to_ding
 
 ua = UserAgent()
 # 今日尾盘入  明日大涨 后天大大涨
@@ -156,13 +154,6 @@ def get_stocks_by_126(codes):
     return df_a
 
 
-def send_tg(text, chat_id):
-    token = '723532221:AAH8SSfM7SfTe4HmhV72QdLbOUW3akphUL8'
-    bot = Bot(token=token)
-    chat_id = chat_id
-    bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
-
-
 def main(date, s_table, cur_t):
     sql = f"select * from {s_table} where create_date = '{date}'"
     df = pd.read_sql_query(sql, con=engine)
@@ -209,9 +200,8 @@ def main(date, s_table, cur_t):
                 , columns].sort_values(by=['ogc'], ascending=True)
             if len(df_b) > 0:
                 last_df = df_b[:5].to_string(header=None)
-                chat_id = "@hollystock"
                 text = '%s 低开大于-6小于-8\n' % date + last_df
-                # send_tg(text, chat_id)
+                to_ding(text)
 
             df_b = new_df.loc[
                 (new_df[change] > 0.95) &
@@ -221,9 +211,8 @@ def main(date, s_table, cur_t):
                 , columns].sort_values(by=['return'], ascending=False)
             if len(df_b) > 0:
                 last_df = df_b[:5].to_string(header=None)
-                chat_id = "@hollystock"
                 text = '%s 涨幅小于1大于0.95，高开小于1\n' % date + last_df
-                # send_tg(text, chat_id)
+                to_ding(text)
 
 
 if __name__ == '__main__':
@@ -236,7 +225,7 @@ if __name__ == '__main__':
     start_date = dd - timedelta(days=10)
     end_date = dd - timedelta(days=1)
     cur_t = dd.strftime(t_format)
-    if dd.hour > 8:
+    if dd.hour == 8:
         # ts初始化
         ts.set_token('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
         ts_data = ts.pro_api()
@@ -259,7 +248,7 @@ if __name__ == '__main__':
         if dd.hour > 15:
             cur_t = '1630'
             t_list.append(cur_t)
-        if dd.hour == 10:
+        if dd.hour == 9:
             cur_t = '0930'
         if cur_t in t_list:
             main(last_date, s_table, cur_t)

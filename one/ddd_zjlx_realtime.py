@@ -3,15 +3,10 @@
 # 东方财富资金流向，并根据策略筛选股票
 
 from datetime import datetime, timedelta
-from telegram import Bot, ParseMode
 from fake_useragent import UserAgent
 from sqlalchemy import create_engine
 import pandas as pd
-import numpy as np
 import tushare as ts
-import requests
-import re
-import json
 
 ua = UserAgent()
 
@@ -32,13 +27,6 @@ def get_stocks(codes):
         columns={'ts_code': 'code', 'close': close_x}
     )
     return df_a
-
-
-def send_tg(text, chat_id):
-    token = '723532221:AAH8SSfM7SfTe4HmhV72QdLbOUW3akphUL8'
-    bot = Bot(token=token)
-    chat_id = chat_id
-    bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
 
 
 def main(date, s_table, t):

@@ -5,42 +5,26 @@
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 import pandas as pd
-import requests
-import json
-
-
-# 向钉钉群输出信息
-def msg(text):
-    token = "b18f740d516e17c03c536639d1d7d01e213aa6a9bcc85d02699c6f884867b233"
-    headers = {'Content-Type': 'application/json;charset=utf-8'}  # 请求头
-    api_url = f"https://oapi.dingtalk.com/robot/send?access_token={token}"
-    json_text = {
-        "msgtype": "text",  # 信息格式
-        "text": {
-            "content": text
-        }
-    }
-    r = requests.post(api_url, json.dumps(json_text), headers=headers)
-    print(r.json())
+from two.send_msg import to_ding
 
 
 def main(date):
     columns = ['ts_code', 'name', 'close', 'amount']
 
     s_table = 'stock_yzzt'
-    sql = f"select * from {s_table} where trade_date == '{date}' order by amount desc limit 5"
+    sql = f"select * from {s_table} where trade_date == '{date}' order by amount desc limit 10"
     df = pd.read_sql_query(sql, con=engine)
     text_df = df[columns].to_string(header=None)
     text1 = 'stock 一字涨停\n' + text_df
 
     s_table = 'stock_zt'
-    sql = f"select * from {s_table} where trade_date == '{date}' and time='0935' order by amount desc limit 5"
+    sql = f"select * from {s_table} where trade_date == '{date}' and time='0935' order by amount desc limit 10"
     df = pd.read_sql_query(sql, con=engine)
     text_df = df[columns].to_string(header=None)
     text2 = 'stock 急速涨停\n' + text_df
 
     last_text = text1 + '\n\r' + text2
-    msg(last_text)
+    to_ding(last_text)
 
 
 if __name__ == '__main__':
@@ -55,5 +39,5 @@ if __name__ == '__main__':
     conn = engine.connect()
     trans = conn.begin()
     d = dd.strftime(d_format)
-    # d = '20210326'
+    # d = '20210330'
     main(d)

@@ -4,7 +4,6 @@
 
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
-from telegram import Bot, ParseMode
 import pandas as pd
 import tushare as ts
 
@@ -69,13 +68,6 @@ def sort_stocks(df_boy):
 
     df = pd.DataFrame(data)
     return df
-
-
-def send_tg(text, chat_id):
-    token = '723532221:AAH8SSfM7SfTe4HmhV72QdLbOUW3akphUL8'
-    bot = Bot(token=token)
-    chat_id = chat_id
-    bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
 
 
 def main(date, s_table):

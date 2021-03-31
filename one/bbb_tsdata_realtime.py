@@ -3,17 +3,13 @@
 # 东方财富资金流向，并根据策略筛选股票
 
 from datetime import datetime, timedelta
-from telegram import Bot, ParseMode
 from fake_useragent import UserAgent
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 import pandas as pd
-import numpy as np
 import tushare as ts
 import requests
 import re
 import json
-import random
 
 ua = UserAgent()
 # 今日尾盘入  明日大涨 后天大大涨
@@ -78,13 +74,6 @@ def get_stocks_by_126(codes):
     return df_a
 
 
-def send_tg(text, chat_id):
-    token = '723532221:AAH8SSfM7SfTe4HmhV72QdLbOUW3akphUL8'
-    bot = Bot(token=token)
-    chat_id = chat_id
-    bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
-
-
 def main(date, s_table, cur_t):
     sql = f"select * from {s_table} where trade_date = '{date}'"
     df = pd.read_sql_query(sql, con=engine)
@@ -124,19 +113,6 @@ def main(date, s_table, cur_t):
 
         if cur_t == '0930':
             columns = ['code', 'name', 'return', 'open', 'ogc', change]
-            # df_b = new_df.loc[
-            #     (new_df['ogc'] < 8) &
-            #     (new_df['ogc'] < 6) &
-            #     (new_df[change] < 3)
-            #     , columns].sort_values(by=['ogc'], ascending=True)
-            # if len(df_b) > 0:
-            #     last_df = df_b[:5].to_string(header=None)
-            #     print(last_df)
-
-            #     chat_id = "@hollystock"
-            #     text = '%s 低开大于-6小于-8\n' % date + last_df
-            #     send_tg(text, chat_id)
-
             df_b = new_df.loc[
                 (new_df[change] > 0.95) &
                 (new_df[change] < 1.02) &

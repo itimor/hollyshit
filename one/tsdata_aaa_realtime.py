@@ -3,10 +3,11 @@
 # 东方财富资金流向，并根据策略筛选股票
 
 from datetime import datetime, timedelta
-from telegram import Bot, ParseMode
 from sqlalchemy import create_engine
 import pandas as pd
 import tushare as ts
+from one.send_msg import to_ding
+
 
 # 今日尾盘入  明日大涨 后天大大涨
 """
@@ -44,13 +45,6 @@ def get_stocks_tushare():
     return last_df
 
 
-def send_tg(text, chat_id):
-    token = '723532221:AAH8SSfM7SfTe4HmhV72QdLbOUW3akphUL8'
-    bot = Bot(token=token)
-    chat_id = chat_id
-    bot.send_message(chat_id=chat_id, text=text, parse_mode=ParseMode.HTML)
-
-
 def main(date, s_table, cur_t):
     print(date)
     sql = f"select * from {s_table} where trade_date = '{date}'"
@@ -85,18 +79,6 @@ def main(date, s_table, cur_t):
 
         if cur_t == '0930':
             columns = ['code', 'name', 'return', 'open_x', 'ogc', change]
-            # df_b = new_df.loc[
-            #     (new_df['ogc'] < 8) &
-            #     (new_df['ogc'] < 6) &
-            #     (new_df[change] < 3)
-            #     , columns].sort_values(by=['ogc'], ascending=True)
-            # if len(df_b) > 0:
-            #     last_df = df_b[:5].to_string(header=None)
-            #     print(last_df)
-            #     chat_id = "@hollystock"
-            #     text = '%s 低开大于-6小于-8\n' % date + last_df
-            #     send_tg(text, chat_id)
-
             df_b = new_df.loc[
                 (new_df[change] > 0.95) &
                 (new_df[change] < 1.02) &
@@ -106,9 +88,9 @@ def main(date, s_table, cur_t):
             if len(df_b) > 0:
                 last_df = df_b[:5].to_string(header=None)
                 print(last_df)
-                chat_id = "@hollystock"
+                last_df.to_sql('tsdata_aaa', engine, if_exists='replace', index=False)
                 text = '%s 涨幅小于1大于0.95，高开小于1\n' % date + last_df
-                # send_tg(text, chat_id)
+                to_ding(text)
 
 
 if __name__ == '__main__':
@@ -121,7 +103,8 @@ if __name__ == '__main__':
     start_date = dd - timedelta(days=10)
     end_date = dd - timedelta(days=1)
     cur_t = dd.strftime(t_format)
-    if dd.hour > 8:
+    c_time = 9
+    if dd.hour == c_time:
         # ts初始化
         ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
         df_ts = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),
@@ -142,7 +125,7 @@ if __name__ == '__main__':
         if dd.hour > 15:
             cur_t = '1630'
             t_list.append(cur_t)
-        if dd.hour == 9:
+        if dd.hour == c_time:
             cur_t = '0930'
         if cur_t in t_list:
             main(last_d, s_table, cur_t)

@@ -3,10 +3,10 @@
 # 东方财富资金流向，并根据策略筛选股票
 
 from datetime import datetime, timedelta
-from telegram import Bot, ParseMode
 from sqlalchemy import create_engine
 import pandas as pd
 import tushare as ts
+from one.send_msg import to_ding
 
 # 今日尾盘入  明日大涨 后天大大涨
 """
@@ -97,9 +97,8 @@ def main(date, s_table, cur_t):
             if len(df_b) > 0:
                 last_df = df_b[:5].to_string(header=None)
                 print(last_df)
-                chat_id = "@hollystock"
                 text = '%s 涨幅小于1大于0.95，高开小于1\n' % date + last_df
-                # send_tg(text, chat_id)
+                to_ding(text)
 
 
 if __name__ == '__main__':
@@ -112,7 +111,7 @@ if __name__ == '__main__':
     start_date = dd - timedelta(days=10)
     end_date = dd - timedelta(days=1)
     cur_t = dd.strftime(t_format)
-    if dd.hour > 8:
+    if dd.hour == 9:
         # ts初始化
         ts_data = ts.pro_api('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
         df_ts = ts_data.trade_cal(exchange='', start_date=start_date.strftime(d_format),

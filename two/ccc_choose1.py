@@ -35,7 +35,12 @@ def handle(df):
     df['ma_10_60'] = df['ma10'] - df['ma60']
     df['ma_20_60'] = df['ma20'] - df['ma60']
 
-    df['close_5'] = (df['close'] - df['close'].shift(5)) / df['close'].shift(5)
+    # n天涨幅
+    df['return_0'] = df['close'] - df['open']
+    df['return_1'] = df['close'].shift(1) - df['open'].shift(1)
+    df['return_2'] = df['close'].shift(2) - df['open'].shift(2)
+    df['return_3'] = df['close'].shift(3) - df['open'].shift(3)
+    df['return_5'] = df['pct_chg'].rolling(5).sum()
     return df
 
 
@@ -44,14 +49,9 @@ def main():
     df = pd.read_sql_query(sql, con=engine)
     managed_df = df.groupby('ts_code').apply(handle).reset_index()
     result_buy = managed_df[
-        (managed_df['ma_10_slop_10'] > 0.01) &
-        (managed_df['ma_10_slop_10'] < 0.08) &
-        (managed_df['ma_5_10'] > 0) &
-        (managed_df['ma_10_20'] > 0) &
-        # (managed_df['ma_20_60'] > 0) &
-        # (managed_df['ma_5_60'] > 0) &
-        # (managed_df['close_5'] > 0.1) &
-        # (managed_df['close_5'] < 0.23) &
+        (managed_df['return_0'] < 0) &
+        (managed_df['return_1'] < 0) &
+        (managed_df['return_1'] < 0) &
         (managed_df['close'] > 5) &
         (managed_df['close'] < 30) &
         # (managed_df['is_highest']) &
@@ -90,5 +90,5 @@ if __name__ == '__main__':
     engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
     conn = engine.connect()
     trans = conn.begin()
-    s_table = 'ccc_ma'
+    s_table = 'stock_ma'
     main()
