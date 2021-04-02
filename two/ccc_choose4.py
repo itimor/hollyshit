@@ -82,5 +82,5 @@ if __name__ == '__main__':
     engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
     conn = engine.connect()
     trans = conn.begin()
-    s_table = 'ccc_ma'
+    s_table = 'stock_ma'
     main()

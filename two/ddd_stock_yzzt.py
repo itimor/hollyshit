@@ -28,7 +28,8 @@ def main():
     last_df = date_df[
         (date_df['open'] == date_df['close']) &
         (date_df['close'] == date_df['high']) &
-        (date_df['high'] == date_df['low']) &
+        # (date_df['high'] == date_df['low']) &
+        (date_df['pctChg'] > 9) &
         (date_df['close'] > 2) &
         (date_df['close'] < 50)
         ]

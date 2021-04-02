@@ -3,7 +3,6 @@
 # 东方财富资金流向，并根据策略筛选股票
 
 from datetime import datetime, timedelta
-from fake_useragent import UserAgent
 from sqlalchemy import create_engine
 import pandas as pd
 import tushare as ts
@@ -13,7 +12,6 @@ import json
 import random
 from one.send_msg import to_ding
 
-ua = UserAgent()
 # 今日尾盘入  明日大涨 后天大大涨
 """
 SELECT * from b_new where ogc <-2 and master > 10 and change < 6 ORDER by master;
@@ -42,8 +40,7 @@ def get_stocks_by_sina(codes):
         if len(a) > 0:
             m = (i + 1) * limit
             url = f"http://hq.sinajs.cn/list={','.join(a)}"
-            headers = {'User-Agent': ua.random}
-            r = requests.get(url, headers=headers).text
+            r = requests.get(url).text
             X = re.split('";', r)
             for x in X[:-1]:
                 y = re.split('="', x)
@@ -85,8 +82,7 @@ def get_stocks_by_qq(codes):
             m = (i + 1) * limit
             s = '%.13f' % random.random()
             url = f"http://qt.gtimg.cn/r={s}q={','.join(a)}"
-            headers = {'User-Agent': ua.random}
-            r = requests.get(url, headers=headers).text
+            r = requests.get(url).text
             X = re.split('";', r)
             for x in X[:-1]:
                 y = re.split('="', x)
@@ -124,8 +120,7 @@ def get_stocks_by_126(codes):
         if len(a) > 0:
             m = (i + 1) * limit
             url = f"http://api.money.126.net/data/feed/{','.join(a)}"
-            headers = {'User-Agent': ua.random}
-            r = requests.get(url, headers=headers).text
+            r = requests.get(url).text
             X = re.split('[)];', r)
             X = re.split('_ntes_quote_callback[(]', X[0])
             b = json.loads(X[1])
@@ -200,7 +195,8 @@ def main(date, s_table, cur_t):
                 , columns].sort_values(by=['ogc'], ascending=True)
             if len(df_b) > 0:
                 last_df = df_b[:5].to_string(header=None)
-                text = '%s 低开大于-6小于-8\n' % date + last_df
+                print(last_df)
+                text = 'stock %s 低开大于-6小于-8\n' % date + last_df
                 to_ding(text)
 
             df_b = new_df.loc[
@@ -211,7 +207,8 @@ def main(date, s_table, cur_t):
                 , columns].sort_values(by=['return'], ascending=False)
             if len(df_b) > 0:
                 last_df = df_b[:5].to_string(header=None)
-                text = '%s 涨幅小于1大于0.95，高开小于1\n' % date + last_df
+                print(last_df)
+                text = 'stock %s 涨幅小于1大于0.95，高开小于1\n' % date + last_df
                 to_ding(text)
 
 
@@ -225,7 +222,8 @@ if __name__ == '__main__':
     start_date = dd - timedelta(days=10)
     end_date = dd - timedelta(days=1)
     cur_t = dd.strftime(t_format)
-    if dd.hour == 8:
+    c_time = 9
+    if dd.hour == c_time:
         # ts初始化
         ts.set_token('d256364e28603e69dc6362aefb8eab76613b704035ee97b555ac79ab')
         ts_data = ts.pro_api()
@@ -248,7 +246,7 @@ if __name__ == '__main__':
         if dd.hour > 15:
             cur_t = '1630'
             t_list.append(cur_t)
-        if dd.hour == 9:
+        if dd.hour == c_time:
             cur_t = '0930'
         if cur_t in t_list:
             main(last_date, s_table, cur_t)

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # author: itimor
-# 连涨后回调，优先选择换手率高的 > 19%
+# 东方财富资金流向，并根据策略筛选股票
 
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
@@ -18,20 +18,9 @@ pd.set_option('display.max_colwidth', 1000)
 
 
 def handle(df):
-    df['highest_10'] = df['high'].rolling(3).max()  # 约定时间内的最高点
-    df['is_highest'] = df['close'] == df['highest_10']  # 当日收盘时约定时间内最高点
-    df['ma_5_10'] = df['ma5'] - df['ma10']
-    df['ma_10_20'] = df['ma10'] - df['ma20']
-    df['ma_5_60'] = df['ma5'] - df['ma60']
-    df['ma_10_60'] = df['ma10'] - df['ma60']
-    df['ma_20_60'] = df['ma20'] - df['ma60']
-
     # n天涨幅
     df['return_0'] = df['pct_chg']
     df['return_1'] = df['pct_chg'].shift(1)
-    df['return_2'] = df['pct_chg'].shift(2)
-    df['return_3'] = df['pct_chg'].shift(2)
-    df['return_5'] = df['pct_chg'].rolling(5).sum()
     return df
 
 
@@ -40,19 +29,11 @@ def main():
     df = pd.read_sql_query(sql, con=engine)
     managed_df = df.groupby('ts_code').apply(handle).reset_index()
     result_buy = managed_df[
-        (managed_df['ma_5_10'] > 0) &
-        # (managed_df['ma_10_20'] > 0) &
-        # (managed_df['up_line'] < 0.8) &
-        # (managed_df['down_line'] < 0.8)&
-        (managed_df['return_0'] > 3) &
-        (managed_df['return_1'] > 3) &
-        (managed_df['return_2'] < 2) &
-        (managed_df['return_3'] < 0) &
+        (managed_df['return_0'] > 9) &
+        (managed_df['return_1'] > 9) &
         (managed_df['close'] > 2) &
-        (managed_df['close'] < 80) &
-        (managed_df['hist'] > -2)
+        (managed_df['close'] < 80)
         ]
-
     stock_to_buy = result_buy.groupby('trade_date').apply(lambda df: list(df.ts_code)).reset_index().rename(
         columns={0: 'stocks'})
     stock_to_buy_dic = stock_to_buy.set_index('trade_date').to_dict()['stocks']
@@ -86,5 +67,5 @@ if __name__ == '__main__':
     engine = create_engine(f'sqlite:///{db}/{db}.db', echo=False, encoding='utf-8')
     conn = engine.connect()
     trans = conn.begin()
-    s_table = 'stock_ma'
+    s_table = 'stock_yzzt'
     main()
